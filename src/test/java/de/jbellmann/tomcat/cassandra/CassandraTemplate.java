@@ -62,7 +62,6 @@ public class CassandraTemplate implements CassandraOperations {
     }
 
     @Override
-<<<<<<< HEAD
     public void setLastAccessedTime(final String sessionId, final long time) {
         execute(new CassandraCallback() {
             @Override
@@ -83,10 +82,6 @@ public class CassandraTemplate implements CassandraOperations {
                 return null;
             }
         });
-=======
-    public void setLastAccessedTime(String sessionId, long time) {
-        // TODO Auto-generated method stub
->>>>>>> 50e65500a9bbc7adcf3ff0e196e3eb6ef9dc0628
     }
 
     @Override
@@ -96,7 +91,6 @@ public class CassandraTemplate implements CassandraOperations {
     }
 
     @Override
-<<<<<<< HEAD
     public void setAttribute(final String sessionId, final String name, final Object value) {
         execute(new CassandraCallback() {
             @Override
@@ -117,10 +111,6 @@ public class CassandraTemplate implements CassandraOperations {
                 return null;
             }
         });
-=======
-    public void setAttribute(String sessionId, String name, Object value) {
-        // TODO Auto-generated method stub
->>>>>>> 50e65500a9bbc7adcf3ff0e196e3eb6ef9dc0628
     }
 
     @Override
@@ -159,7 +149,6 @@ public class CassandraTemplate implements CassandraOperations {
     // Utilities
 
     private Column getColumnForCreationTime(long value) {
-<<<<<<< HEAD
         return getColumnForName("METADATA-CREATIONTIME", ByteBuffer.allocate(8).putLong(value));
     }
 
@@ -172,12 +161,6 @@ public class CassandraTemplate implements CassandraOperations {
     }
 
     private Column getColumnForName(String name, ByteBuffer byteBuffer) {
-=======
-        return getColumnForName("METADATA-CREATIONTIME", value + "");
-    }
-
-    private Column getColumnForName(String name, Object value) {
->>>>>>> 50e65500a9bbc7adcf3ff0e196e3eb6ef9dc0628
         return null;
     }
 
