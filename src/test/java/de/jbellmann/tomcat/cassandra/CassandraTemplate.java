@@ -22,6 +22,8 @@ import org.apache.thrift.TException;
 
 public class CassandraTemplate implements CassandraOperations {
 
+    private static final String CF_NAME = "Sessions";
+
     private static Serializer<String> sessionIdSerializer = new StringSerializer();
     private static Serializer<Long> longSerializer = new LongSerializer();
     private static Serializer<Object> objectSerializer = new ObjectSerializer(CassandraTemplate.class.getClassLoader());
@@ -157,24 +159,30 @@ public class CassandraTemplate implements CassandraOperations {
 
     // Utilities
 
-    private Column getColumnForCreationTime(long value) {
+    protected Column getColumnForCreationTime(long value) {
         return getColumnForName("METADATA-CREATIONTIME", longSerializer.toByteBuffer(value));
     }
 
-    private Column getColumnForLastAccessedTime(long value) {
+    protected Column getColumnForLastAccessedTime(long value) {
         return getColumnForName("METADATA-LASTACCESSEDTIME", longSerializer.toByteBuffer(value));
     }
 
-    private Column getColumnForAttribute(String name, Object value) {
+    protected Column getColumnForAttribute(String name, Object value) {
         return getColumnForName(name, objectSerializer.toByteBuffer(value));
     }
 
-    private Column getColumnForName(String name, ByteBuffer byteBuffer) {
-        return null;
+    protected Column getColumnForName(String name, ByteBuffer byteBuffer) {
+        Column column = new Column();
+        column.setName(sessionIdSerializer.toByteBuffer(name));
+        column.setValue(byteBuffer);
+        column.setTimestamp(System.currentTimeMillis());
+        return column;
     }
 
-    private ColumnParent getColumnParent() {
-        return null;
+    protected ColumnParent getColumnParent() {
+        ColumnParent columnParent = new ColumnParent();
+        columnParent.setColumn_family(CF_NAME);
+        return columnParent;
     }
 
     protected static ByteBuffer idToByteBuffer(String sessionId) {
