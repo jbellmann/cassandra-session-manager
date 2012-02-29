@@ -188,7 +188,7 @@ public class CassandraManager extends ManagerBase {
     }
 
     @Override
-    public HashMap getSession(String sessionId) {
+    public HashMap<String, String> getSession(String sessionId) {
         return super.getSession(sessionId);
     }
 
