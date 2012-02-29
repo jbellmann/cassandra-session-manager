@@ -5,6 +5,11 @@ import java.nio.ByteBuffer;
 import java.util.Enumeration;
 import java.util.List;
 
+import me.prettyprint.cassandra.serializers.LongSerializer;
+import me.prettyprint.cassandra.serializers.ObjectSerializer;
+import me.prettyprint.cassandra.serializers.StringSerializer;
+import me.prettyprint.hector.api.Serializer;
+
 import org.apache.cassandra.thrift.Cassandra.Client;
 import org.apache.cassandra.thrift.Column;
 import org.apache.cassandra.thrift.ColumnParent;
@@ -16,6 +21,10 @@ import org.apache.catalina.Session;
 import org.apache.thrift.TException;
 
 public class CassandraTemplate implements CassandraOperations {
+
+    private static Serializer<String> sessionIdSerializer = new StringSerializer();
+    private static Serializer<Long> longSerializer = new LongSerializer();
+    private static Serializer<Object> objectSerializer = new ObjectSerializer(CassandraTemplate.class.getClassLoader());
 
     @Override
     public Object execute(CassandraCallback callback) throws CassandraCallbackException {
@@ -38,7 +47,7 @@ public class CassandraTemplate implements CassandraOperations {
             @Override
             public Object doInCassandra(Client client) throws RuntimeException {
                 try {
-                    client.insert(idToByteBuffer(sessionId), getColumnParent(), getColumnForCreationTime(time), ConsistencyLevel.ONE);
+                    client.insert(sessionIdSerializer.toByteBuffer(sessionId), getColumnParent(), getColumnForCreationTime(time), ConsistencyLevel.ONE);
                 } catch (InvalidRequestException e) {
                     throw new RuntimeException(e);
                 } catch (UnavailableException e) {
@@ -67,7 +76,7 @@ public class CassandraTemplate implements CassandraOperations {
             @Override
             public Object doInCassandra(Client client) throws RuntimeException {
                 try {
-                    client.insert(idToByteBuffer(sessionId), getColumnParent(), getColumnForLastAccessedTime(time), ConsistencyLevel.ONE);
+                    client.insert(sessionIdSerializer.toByteBuffer(sessionId), getColumnParent(), getColumnForLastAccessedTime(time), ConsistencyLevel.ONE);
                 } catch (InvalidRequestException e) {
                     throw new RuntimeException(e);
                 } catch (UnavailableException e) {
@@ -96,7 +105,7 @@ public class CassandraTemplate implements CassandraOperations {
             @Override
             public Object doInCassandra(Client client) throws RuntimeException {
                 try {
-                    client.insert(idToByteBuffer(sessionId), getColumnParent(), getColumnForAttribute(name, value), ConsistencyLevel.ONE);
+                    client.insert(sessionIdSerializer.toByteBuffer(sessionId), getColumnParent(), getColumnForAttribute(name, value), ConsistencyLevel.ONE);
                 } catch (InvalidRequestException e) {
                     throw new RuntimeException(e);
                 } catch (UnavailableException e) {
@@ -149,15 +158,15 @@ public class CassandraTemplate implements CassandraOperations {
     // Utilities
 
     private Column getColumnForCreationTime(long value) {
-        return getColumnForName("METADATA-CREATIONTIME", ByteBuffer.allocate(8).putLong(value));
+        return getColumnForName("METADATA-CREATIONTIME", longSerializer.toByteBuffer(value));
     }
 
     private Column getColumnForLastAccessedTime(long value) {
-        return getColumnForName("METADATA-LASTACCESSEDTIME", ByteBuffer.allocate(8).putLong(value));
+        return getColumnForName("METADATA-LASTACCESSEDTIME", longSerializer.toByteBuffer(value));
     }
 
     private Column getColumnForAttribute(String name, Object value) {
-        return getColumnForName(name, null);
+        return getColumnForName(name, objectSerializer.toByteBuffer(value));
     }
 
     private Column getColumnForName(String name, ByteBuffer byteBuffer) {
