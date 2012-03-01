@@ -50,7 +50,7 @@ public class CassandraManager extends ManagerBase {
     }
 
     protected void setCassandraOperations(CassandraOperations cassandraOperations) {
-
+        this.cassandraOperations = cassandraOperations;
     }
 
     //    public  void setDefaultQosParameters(QosParameters qos) {
@@ -208,27 +208,24 @@ public class CassandraManager extends ManagerBase {
 
     @Override
     public String getCreationTime(String sessionId) {
-        Session session = null;
-        try {
-            session = findSession(sessionId);
-        } catch (IOException e) {
-            log.error("IOException on CassandraManager.getCreationTime()-method with sessionId " + sessionId, e);
-        }
-        if (session != null) {
-            return new Date(session.getCreationTime()).toString();
-        }
-        return "";
+        Session session = findSessionInternal(sessionId);
+        return session != null ? new Date(session.getCreationTime()).toString() : "";
+        //        try {
+        //            session = findSession(sessionId);
+        //        } catch (IOException e) {
+        //            log.error("IOException on CassandraManager.getCreationTime()-method with sessionId " + sessionId, e);
+        //        }
+        //        if (session != null) {
+        //            return new Date(session.getCreationTime()).toString();
+        //        }
+        //        return "";
         //            return findSession(sessionId)?.getCreationTime()
     }
 
     @Override
     public long getCreationTimestamp(String sessionId) {
         Session session = findSessionInternal(sessionId);
-        if (session != null) {
-            return session.getCreationTime();
-        } else {
-            return -1;
-        }
+        return session != null ? session.getCreationTime() : -1;
     }
 
     @Override
@@ -252,12 +249,17 @@ public class CassandraManager extends ManagerBase {
     }
 
     @Override
+    public Session createEmptySession() {
+        return (getNewSession());
+    }
+
+    @Override
     public Session createSession(String sessionId) {
         CassandraSession session = (CassandraSession) createEmptySession();
         session.setNew(true);
         session.setValid(true);
         session.setMaxInactiveInterval(maxInactiveInterval);
-        if (sessionId == null) {
+        if (sessionId != null) {
             session.setIdInternal(generateSessionId());
             session.setCreationTime(System.currentTimeMillis());
             session.setLastAccessedTime(System.currentTimeMillis());
