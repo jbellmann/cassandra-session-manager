@@ -65,6 +65,11 @@
       <version>${tomcat.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.apache.tomcat</groupId>
+      <artifactId>tomcat-coyote</artifactId>
+      <version>${tomcat.version}</version>
+    </dependency>
+    <dependency>
     <groupId>me.prettyprint</groupId>
     <artifactId>hector-core</artifactId>
     <version>1.0-3</version>
