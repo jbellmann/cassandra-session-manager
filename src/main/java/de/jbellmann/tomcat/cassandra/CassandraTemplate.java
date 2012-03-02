@@ -1,7 +1,9 @@
 package de.jbellmann.tomcat.cassandra;
 
 import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 
@@ -12,9 +14,16 @@ import me.prettyprint.hector.api.Serializer;
 
 import org.apache.cassandra.thrift.Cassandra.Client;
 import org.apache.cassandra.thrift.Column;
+import org.apache.cassandra.thrift.ColumnOrSuperColumn;
 import org.apache.cassandra.thrift.ColumnParent;
+import org.apache.cassandra.thrift.ColumnPath;
 import org.apache.cassandra.thrift.ConsistencyLevel;
 import org.apache.cassandra.thrift.InvalidRequestException;
+import org.apache.cassandra.thrift.KeyRange;
+import org.apache.cassandra.thrift.KeySlice;
+import org.apache.cassandra.thrift.NotFoundException;
+import org.apache.cassandra.thrift.SlicePredicate;
+import org.apache.cassandra.thrift.SliceRange;
 import org.apache.cassandra.thrift.TimedOutException;
 import org.apache.cassandra.thrift.UnavailableException;
 import org.apache.catalina.Session;
@@ -24,12 +33,17 @@ public class CassandraTemplate implements CassandraOperations {
 
     private static final String CF_NAME = "Sessions";
 
-    private static Serializer<String> sessionIdSerializer = new StringSerializer();
-    private static Serializer<Long> longSerializer = new LongSerializer();
-    private static Serializer<Object> objectSerializer = new ObjectSerializer(CassandraTemplate.class.getClassLoader());
+    protected static final String CREATIONTIME_COLUMN_NAME = "METADATA-CREATIONTIME";
 
-    @Override
-    public Object execute(CassandraCallback callback) throws CassandraCallbackException {
+    protected static Serializer<String> stringSerializer = new StringSerializer();
+    protected static Serializer<Long> longSerializer = new LongSerializer();
+    protected static Serializer<Object> objectSerializer = new ObjectSerializer(
+            CassandraTemplate.class.getClassLoader());
+
+    private static final BigInteger MAX = new BigInteger("2").pow(127);
+
+    //    @Override
+    public <T> T execute(CassandraCallback<T> callback) throws CassandraCallbackException {
         return callback.doInCassandra(getClient());
     }
 
@@ -38,18 +52,37 @@ public class CassandraTemplate implements CassandraOperations {
     }
 
     @Override
-    public long getCreationTime(String sessionId) {
-        // TODO Auto-generated method stub
-        return 0;
+    public long getCreationTime(final String sessionId) {
+        return execute(new CassandraCallback<Long>() {
+            @Override
+            public Long doInCassandra(Client client) throws RuntimeException {
+                try {
+                    ColumnOrSuperColumn result = client.get(stringSerializer.toByteBuffer(sessionId),
+                            getColumnPath(CREATIONTIME_COLUMN_NAME), ConsistencyLevel.ONE);
+                    return longSerializer.fromBytes(result.getColumn().getValue());
+                } catch (InvalidRequestException e) {
+                    throw new RuntimeException(e);
+                } catch (NotFoundException e) {
+                    throw new RuntimeException(e);
+                } catch (UnavailableException e) {
+                    throw new RuntimeException(e);
+                } catch (TimedOutException e) {
+                    throw new RuntimeException(e);
+                } catch (TException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
     }
 
     @Override
     public void setCreationTime(final String sessionId, final long time) {
-        execute(new CassandraCallback() {
+        execute(new CassandraCallback<Object>() {
             @Override
             public Object doInCassandra(Client client) throws RuntimeException {
                 try {
-                    client.insert(sessionIdSerializer.toByteBuffer(sessionId), getColumnParent(), getColumnForCreationTime(time), ConsistencyLevel.ONE);
+                    client.insert(stringSerializer.toByteBuffer(sessionId), getColumnParent(),
+                            getColumnForCreationTime(time), ConsistencyLevel.ONE);
                 } catch (InvalidRequestException e) {
                     throw new RuntimeException(e);
                 } catch (UnavailableException e) {
@@ -74,11 +107,12 @@ public class CassandraTemplate implements CassandraOperations {
 
     @Override
     public void setLastAccessedTime(final String sessionId, final long time) {
-        execute(new CassandraCallback() {
+        execute(new CassandraCallback<Object>() {
             @Override
             public Object doInCassandra(Client client) throws RuntimeException {
                 try {
-                    client.insert(sessionIdSerializer.toByteBuffer(sessionId), getColumnParent(), getColumnForLastAccessedTime(time), ConsistencyLevel.ONE);
+                    client.insert(stringSerializer.toByteBuffer(sessionId), getColumnParent(),
+                            getColumnForLastAccessedTime(time), ConsistencyLevel.ONE);
                 } catch (InvalidRequestException e) {
                     throw new RuntimeException(e);
                 } catch (UnavailableException e) {
@@ -103,11 +137,12 @@ public class CassandraTemplate implements CassandraOperations {
 
     @Override
     public void setAttribute(final String sessionId, final String name, final Object value) {
-        execute(new CassandraCallback() {
+        execute(new CassandraCallback<Object>() {
             @Override
             public Object doInCassandra(Client client) throws RuntimeException {
                 try {
-                    client.insert(sessionIdSerializer.toByteBuffer(sessionId), getColumnParent(), getColumnForAttribute(name, value), ConsistencyLevel.ONE);
+                    client.insert(stringSerializer.toByteBuffer(sessionId), getColumnParent(),
+                            getColumnForAttribute(name, value), ConsistencyLevel.ONE);
                 } catch (InvalidRequestException e) {
                     throw new RuntimeException(e);
                 } catch (UnavailableException e) {
@@ -143,8 +178,28 @@ public class CassandraTemplate implements CassandraOperations {
 
     @Override
     public List<String> findSessionKeys() {
-        // TODO Auto-generated method stub
-        return null;
+        return execute(new CassandraCallback<List<String>>() {
+            @Override
+            public List<String> doInCassandra(Client client) throws RuntimeException {
+                List<String> result = new ArrayList<String>();
+                try {
+                    List<KeySlice> keysliceList = getClient().get_range_slices(getColumnParent(), getSlicePredicate(),
+                            getKeyRange(), ConsistencyLevel.ONE);
+                    for (KeySlice keySlice : keysliceList) {
+                        result.add(new String(keySlice.getKey()));
+                    }
+                    return result;
+                } catch (InvalidRequestException e) {
+                    throw new RuntimeException(e);
+                } catch (UnavailableException e) {
+                    throw new RuntimeException(e);
+                } catch (TimedOutException e) {
+                    throw new RuntimeException(e);
+                } catch (TException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
     }
 
     @Override
@@ -173,16 +228,40 @@ public class CassandraTemplate implements CassandraOperations {
 
     protected Column getColumnForName(String name, ByteBuffer byteBuffer) {
         Column column = new Column();
-        column.setName(sessionIdSerializer.toByteBuffer(name));
+        column.setName(stringSerializer.toByteBuffer(name));
         column.setValue(byteBuffer);
         column.setTimestamp(System.currentTimeMillis());
         return column;
+    }
+
+    protected SlicePredicate getSlicePredicate() {
+        SlicePredicate predicate = new SlicePredicate();
+        SliceRange range = new SliceRange();
+        range.setStart(new byte[0]);
+        range.setFinish(new byte[0]);
+        range.setCount(9000);
+        predicate.setSlice_range(range);
+        return predicate;
+    }
+
+    protected KeyRange getKeyRange() {
+        KeyRange keyRange = new KeyRange();
+        keyRange.setStart_token(BigInteger.ZERO.toString());
+        keyRange.setEnd_token(MAX.toString());
+        return keyRange;
     }
 
     protected ColumnParent getColumnParent() {
         ColumnParent columnParent = new ColumnParent();
         columnParent.setColumn_family(CF_NAME);
         return columnParent;
+    }
+
+    protected ColumnPath getColumnPath(String columnName) {
+        ColumnPath columnPath = new ColumnPath();
+        columnPath.setColumn_family("");
+        columnPath.setColumn(stringSerializer.toByteBuffer(columnName));
+        return columnPath;
     }
 
     protected static ByteBuffer idToByteBuffer(String sessionId) {
