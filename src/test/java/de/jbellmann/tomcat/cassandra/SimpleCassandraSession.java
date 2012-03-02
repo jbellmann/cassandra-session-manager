@@ -2,9 +2,9 @@ package de.jbellmann.tomcat.cassandra;
 
 import org.apache.catalina.Manager;
 
-public class TestCassandraSession extends CassandraSession {
+public class SimpleCassandraSession extends CassandraSession {
 
-    public TestCassandraSession(Manager manager) {
+    public SimpleCassandraSession(Manager manager) {
         super(manager);
     }
 

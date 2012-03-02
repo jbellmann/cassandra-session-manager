@@ -142,7 +142,7 @@ public class CassandraManagerTest {
         public Session findSession(String id) throws IOException {
             CassandraSession session = (CassandraSession) super.findSession(id);
             if (wrapSession) {
-                return new TestCassandraSession(this);
+                return new SimpleCassandraSession(this);
             }
             return session;
         }
