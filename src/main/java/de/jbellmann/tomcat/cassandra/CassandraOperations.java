@@ -7,7 +7,7 @@ import org.apache.catalina.Session;
 
 public interface CassandraOperations {
 
-    Object execute(CassandraCallback callback) throws CassandraCallbackException;
+    //    Object execute(CassandraCallback callback) throws CassandraCallbackException;
 
     // operations needed in Session
 
