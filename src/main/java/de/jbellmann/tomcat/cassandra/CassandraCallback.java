@@ -2,8 +2,8 @@ package de.jbellmann.tomcat.cassandra;
 
 import org.apache.cassandra.thrift.Cassandra.Client;
 
-public interface CassandraCallback {
+public interface CassandraCallback<T> {
 
-    Object doInCassandra(Client client) throws RuntimeException;
+    T doInCassandra(Client client) throws RuntimeException;
 
 }
