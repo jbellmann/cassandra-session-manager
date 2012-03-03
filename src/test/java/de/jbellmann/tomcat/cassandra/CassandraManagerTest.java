@@ -69,7 +69,7 @@ public class CassandraManagerTest {
         Session session = manager.findSession(TEST_SESSION_ID);
         //
         manager.remove(session);
-        Mockito.verify(cassandraOperations, Mockito.times(1)).removeSession(session);
+        Mockito.verify(cassandraOperations, Mockito.times(1)).removeSession(session.getId());
     }
 
     @Test

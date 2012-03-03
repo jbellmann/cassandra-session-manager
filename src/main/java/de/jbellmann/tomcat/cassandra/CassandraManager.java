@@ -178,7 +178,7 @@ public class CassandraManager extends ManagerBase {
 
     @Override
     public void remove(Session session) {
-        getCassandraOperations().removeSession(session);
+        getCassandraOperations().removeSession(session.getId());
         //        riak.delete(name, session.id);
     }
 

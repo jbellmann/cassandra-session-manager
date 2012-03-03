@@ -3,8 +3,6 @@ package de.jbellmann.tomcat.cassandra;
 import java.util.Enumeration;
 import java.util.List;
 
-import org.apache.catalina.Session;
-
 public interface CassandraOperations {
 
     //    Object execute(CassandraCallback callback) throws CassandraCallbackException;
@@ -33,8 +31,8 @@ public interface CassandraOperations {
 
     List<String> findSessionKeys();
 
-    void addSession(Session session);
+    //    void addSession(Session session);
 
-    void removeSession(Session session);
+    void removeSession(String sessionId);
 
 }

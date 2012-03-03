@@ -1,5 +1,7 @@
 package de.jbellmann.tomcat.cassandra;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Enumeration;
 
 import javax.servlet.http.HttpSession;
@@ -109,7 +111,8 @@ public class CassandraSession extends StandardSession {
 
     @Override
     public Enumeration<String> getAttributeNames() {
-        return getCassandraSessionOperations().getAttributeNames(getId());
+        return Collections.enumeration(Arrays.asList(keys()));
+        //        return getCassandraSessionOperations().getAttributeNames(getId());
         //            def schema = getRiakTemplate().getBucketSchema(getId(), true)
         //            return Collections.enumeration(schema.keys)
     }
