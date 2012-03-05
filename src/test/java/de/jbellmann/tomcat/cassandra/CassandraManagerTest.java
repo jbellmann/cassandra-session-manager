@@ -13,17 +13,17 @@ public class CassandraManagerTest {
 
     private final static String TEST_SESSION_ID = "123456789";
 
-    private CassandraOperations cassandraOperations;
+    private CassandraTemplate cassandraOperations;
 
     @Before
     public void setUp() {
-        cassandraOperations = Mockito.mock(CassandraOperations.class);
+        cassandraOperations = Mockito.mock(CassandraTemplate.class);
     }
 
     @Test
     public void testSessionCreation() throws LifecycleException {
         CassandraManager manager = new TestCassandraManager(false);
-        manager.setCassandraOperations(cassandraOperations);
+        manager.setCassandraTemplate(cassandraOperations);
         Assert.assertNotNull(manager.getName());
         Assert.assertEquals(CassandraManager.class.getName() + "/1.0", manager.getInfo());
         Assert.assertEquals("cassandra-manager", manager.getName());
@@ -44,7 +44,7 @@ public class CassandraManagerTest {
     @Test
     public void testFindSession() throws IOException {
         CassandraManager manager = new TestCassandraManager(false);
-        manager.setCassandraOperations(cassandraOperations);
+        manager.setCassandraTemplate(cassandraOperations);
         Session session = manager.findSession(TEST_SESSION_ID);
         Assert.assertNotNull(session);
         Assert.assertNotNull(session.getId());
@@ -65,7 +65,7 @@ public class CassandraManagerTest {
     @Test
     public void testRemoveSession() throws IOException {
         CassandraManager manager = new TestCassandraManager(false);
-        manager.setCassandraOperations(cassandraOperations);
+        manager.setCassandraTemplate(cassandraOperations);
         Session session = manager.findSession(TEST_SESSION_ID);
         //
         manager.remove(session);
@@ -75,7 +75,7 @@ public class CassandraManagerTest {
     @Test
     public void testExpireSession() throws IOException {
         CassandraManager manager = new TestCassandraManager(true);
-        manager.setCassandraOperations(cassandraOperations);
+        manager.setCassandraTemplate(cassandraOperations);
         manager.findSession(TEST_SESSION_ID);
         manager.expireSession(TEST_SESSION_ID);
         //        Mockito.verify(cassandraOperations, Mockito.times(1)).expireSession(Mockito.eq(TEST_SESSION_ID));
@@ -84,7 +84,7 @@ public class CassandraManagerTest {
     @Test
     public void testGetLastAccessedTime() throws IOException {
         CassandraManager manager = new TestCassandraManager(false);
-        manager.setCassandraOperations(cassandraOperations);
+        manager.setCassandraTemplate(cassandraOperations);
         manager.findSession(TEST_SESSION_ID);
         //
         Mockito.when(cassandraOperations.getLastAccessedTime(Mockito.anyString())).thenReturn(
@@ -99,7 +99,7 @@ public class CassandraManagerTest {
     @Test
     public void testGetCreationTime() throws IOException {
         CassandraManager manager = new TestCassandraManager(false);
-        manager.setCassandraOperations(cassandraOperations);
+        manager.setCassandraTemplate(cassandraOperations);
         manager.findSession(TEST_SESSION_ID);
         //
         Mockito.when(cassandraOperations.getCreationTime(Mockito.anyString())).thenReturn(System.currentTimeMillis());
@@ -113,7 +113,7 @@ public class CassandraManagerTest {
     @Test
     public void testGetSessionAttribute() throws IOException {
         CassandraManager manager = new TestCassandraManager(false);
-        manager.setCassandraOperations(cassandraOperations);
+        manager.setCassandraTemplate(cassandraOperations);
         manager.findSession(TEST_SESSION_ID);
         //
         Mockito.when(cassandraOperations.getAttribute(Mockito.anyString(), Mockito.anyString()))

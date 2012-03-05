@@ -5,8 +5,6 @@ import java.util.List;
 
 public interface CassandraOperations {
 
-    //    Object execute(CassandraCallback callback) throws CassandraCallbackException;
-
     // operations needed in Session
 
     long getCreationTime(String sessionId);
@@ -31,7 +29,7 @@ public interface CassandraOperations {
 
     List<String> findSessionKeys();
 
-    //    void addSession(Session session);
+    void addSession(String sessionId);
 
     void removeSession(String sessionId);
 

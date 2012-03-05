@@ -1,374 +1,275 @@
 package de.jbellmann.tomcat.cassandra;
 
-import java.io.UnsupportedEncodingException;
-import java.math.BigInteger;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.List;
 
 import me.prettyprint.cassandra.serializers.LongSerializer;
 import me.prettyprint.cassandra.serializers.ObjectSerializer;
 import me.prettyprint.cassandra.serializers.StringSerializer;
-import me.prettyprint.hector.api.Serializer;
-
-import org.apache.cassandra.thrift.Cassandra.Client;
-import org.apache.cassandra.thrift.Column;
-import org.apache.cassandra.thrift.ColumnOrSuperColumn;
-import org.apache.cassandra.thrift.ColumnParent;
-import org.apache.cassandra.thrift.ColumnPath;
-import org.apache.cassandra.thrift.ConsistencyLevel;
-import org.apache.cassandra.thrift.InvalidRequestException;
-import org.apache.cassandra.thrift.KeyRange;
-import org.apache.cassandra.thrift.KeySlice;
-import org.apache.cassandra.thrift.NotFoundException;
-import org.apache.cassandra.thrift.SlicePredicate;
-import org.apache.cassandra.thrift.SliceRange;
-import org.apache.cassandra.thrift.TimedOutException;
-import org.apache.cassandra.thrift.UnavailableException;
-import org.apache.thrift.TException;
+import me.prettyprint.cassandra.service.CassandraHostConfigurator;
+import me.prettyprint.cassandra.service.ColumnSliceIterator;
+import me.prettyprint.hector.api.Cluster;
+import me.prettyprint.hector.api.Keyspace;
+import me.prettyprint.hector.api.beans.OrderedRows;
+import me.prettyprint.hector.api.beans.Row;
+import me.prettyprint.hector.api.ddl.ColumnFamilyDefinition;
+import me.prettyprint.hector.api.ddl.ComparatorType;
+import me.prettyprint.hector.api.ddl.KeyspaceDefinition;
+import me.prettyprint.hector.api.factory.HFactory;
+import me.prettyprint.hector.api.mutation.Mutator;
+import me.prettyprint.hector.api.query.ColumnQuery;
+import me.prettyprint.hector.api.query.QueryResult;
+import me.prettyprint.hector.api.query.RangeSlicesQuery;
+import me.prettyprint.hector.api.query.SliceQuery;
 
 public class CassandraTemplate implements CassandraOperations {
 
-    private static final String CF_NAME = "Sessions";
+    public static final String CREATIONTIME_COLUMN_NAME = "METADATA-CREATIONTIME";
+    public static final String LAST_ACCESSTIME_COLUMN_NAME = "METADATA-LASTACCESSTIME";
 
-    protected static final String CREATIONTIME_COLUMN_NAME = "METADATA-CREATIONTIME";
+    public static final String DEFAULT_CLUSTER_NAME = "TOMCAT_SESSION_MANAGER_CLUSTER";
+    public static final String DEFAULT_KEYSPACE_NAME = "TOMCAT_SESSION_MANAGER_KEYSPACE";
+    public static final String DEFAULT_COLUMNFAMILY_NAME = "TOMCAT_SESSION_MANAGER_COLUMNFAMILY";
 
-    protected static Serializer<String> stringSerializer = new StringSerializer();
-    protected static Serializer<Long> longSerializer = new LongSerializer();
-    protected static Serializer<Object> objectSerializer = new ObjectSerializer(
-            CassandraTemplate.class.getClassLoader());
+    public static final String DEFAULT_STRATEGY_CLASS_NAME = "org.apache.cassandra.locator.SimpleStrategy";
 
-    private static final BigInteger MAX = new BigInteger("2").pow(127);
+    public static final int DEFAULT_REPLICATION_FACTOR = 1;
 
-    //    @Override
-    public <T> T execute(CassandraCallback<T> callback) throws CassandraCallbackException {
-        return callback.doInCassandra(getClient());
+    protected Cluster getCluster() {
+        return this.cluster;
     }
 
-    protected Client getClient() {
-        return null;
+    protected Keyspace getKeyspace() {
+        return this.keyspace;
+    }
+
+    //long-live-objects
+    private Cluster cluster;
+    private Keyspace keyspace;
+
+    //mandantory
+    private String clusterName = DEFAULT_CLUSTER_NAME;
+    private String keyspaceName = DEFAULT_KEYSPACE_NAME;
+    private String columnFamilyName = DEFAULT_COLUMNFAMILY_NAME;
+    private String strategyClassName = DEFAULT_STRATEGY_CLASS_NAME;
+    private String hosts;
+    private int replicationFactor = DEFAULT_REPLICATION_FACTOR;
+
+    //optional
+    private int maxActive = 20;
+    private int maxIdle = 5; // not used, method to set not found
+    private int thriftSocketTimeout = 3000;
+    private long maxWaitTimeWhenExhausted = 4000;
+
+    public void initialize() {
+        cluster = HFactory.getOrCreateCluster(getClusterName(), getCassandraHostConfigurator());
+        // ColumnFamilyDefinition
+        ColumnFamilyDefinition columnFamilyDefinition = HFactory.createColumnFamilyDefinition(getKeyspaceName(),
+                getColumnFamilyName(), ComparatorType.BYTESTYPE);
+        // KeyspaceDefinition
+        KeyspaceDefinition keyspaceDefinition = HFactory.createKeyspaceDefinition(getKeyspaceName(),
+                getStrategyClassName(), getReplicationFactor(), Arrays.asList(columnFamilyDefinition));
+        // keyspace to cluster
+        cluster.addKeyspace(keyspaceDefinition, true);
+
+        keyspace = HFactory.createKeyspace(getKeyspaceName(), cluster);
+    }
+
+    protected CassandraHostConfigurator getCassandraHostConfigurator() {
+        CassandraHostConfigurator configurator = new CassandraHostConfigurator(getHosts());
+        configurator.setMaxActive(getMaxActive());
+        configurator.setMaxWaitTimeWhenExhausted(getMaxWaitTimeWhenExhausted());
+        configurator.setCassandraThriftSocketTimeout(getThriftSocketTimeout());
+        return configurator;
     }
 
     @Override
     public long getCreationTime(final String sessionId) {
-        return execute(new CassandraCallback<Long>() {
-            @Override
-            public Long doInCassandra(Client client) throws RuntimeException {
-                try {
-                    ColumnOrSuperColumn result = client.get(stringSerializer.toByteBuffer(sessionId),
-                            getColumnPath(CREATIONTIME_COLUMN_NAME), ConsistencyLevel.ONE);
-                    return longSerializer.fromBytes(result.getColumn().getValue());
-                } catch (InvalidRequestException e) {
-                    throw new RuntimeException(e);
-                } catch (NotFoundException e) {
-                    throw new RuntimeException(e);
-                } catch (UnavailableException e) {
-                    throw new RuntimeException(e);
-                } catch (TimedOutException e) {
-                    throw new RuntimeException(e);
-                } catch (TException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        });
+        ColumnQuery<String, String, Long> query = HFactory.createColumnQuery(keyspace, StringSerializer.get(),
+                StringSerializer.get(), LongSerializer.get());
+        query.setColumnFamily(getColumnFamilyName()).setKey(sessionId).setName(CREATIONTIME_COLUMN_NAME);
+        return query.execute().get().getValue();
     }
 
     @Override
     public void setCreationTime(final String sessionId, final long time) {
-        execute(new CassandraCallback<Object>() {
-            @Override
-            public Object doInCassandra(Client client) throws RuntimeException {
-                try {
-                    client.insert(stringSerializer.toByteBuffer(sessionId), getColumnParent(),
-                            getColumnForCreationTime(time), ConsistencyLevel.ONE);
-                } catch (InvalidRequestException e) {
-                    throw new RuntimeException(e);
-                } catch (UnavailableException e) {
-                    // maybe we can use another client
-                    throw new RuntimeException(e);
-                } catch (TimedOutException e) {
-                    // maybe we can use another client
-                    throw new RuntimeException(e);
-                } catch (TException e) {
-                    throw new RuntimeException(e);
-                }
-                return null;
-            }
-        });
+        Mutator<String> mutator = HFactory.createMutator(this.keyspace, StringSerializer.get());
+        mutator.insert(sessionId, this.columnFamilyName,
+                HFactory.createColumn(CREATIONTIME_COLUMN_NAME, time, StringSerializer.get(), LongSerializer.get()));
     }
 
     @Override
     public long getLastAccessedTime(String sessionId) {
-        // TODO Auto-generated method stub
-        return 0;
+        ColumnQuery<String, String, Long> query = HFactory.createColumnQuery(keyspace, StringSerializer.get(),
+                StringSerializer.get(), LongSerializer.get());
+        query.setColumnFamily(getColumnFamilyName()).setKey(sessionId).setName(LAST_ACCESSTIME_COLUMN_NAME);
+        return query.execute().get().getValue();
     }
 
     @Override
     public void setLastAccessedTime(final String sessionId, final long time) {
-        execute(new CassandraCallback<Object>() {
-            @Override
-            public Object doInCassandra(Client client) throws RuntimeException {
-                try {
-                    client.insert(stringSerializer.toByteBuffer(sessionId), getColumnParent(),
-                            getColumnForLastAccessedTime(time), ConsistencyLevel.ONE);
-                } catch (InvalidRequestException e) {
-                    throw new RuntimeException(e);
-                } catch (UnavailableException e) {
-                    // maybe we can use another client
-                    throw new RuntimeException(e);
-                } catch (TimedOutException e) {
-                    // maybe we can use another client
-                    throw new RuntimeException(e);
-                } catch (TException e) {
-                    throw new RuntimeException(e);
-                }
-                return null;
-            }
-        });
+        Mutator<String> mutator = HFactory.createMutator(this.keyspace, StringSerializer.get());
+        mutator.insert(sessionId, this.columnFamilyName,
+                HFactory.createColumn(LAST_ACCESSTIME_COLUMN_NAME, time, StringSerializer.get(), LongSerializer.get()));
     }
 
     @Override
     public Object getAttribute(final String sessionId, final String name) {
-        return execute(new CassandraCallback<Object>() {
-            @Override
-            public Object doInCassandra(Client client) throws RuntimeException {
-                try {
-                    ColumnOrSuperColumn result = client.get(stringSerializer.toByteBuffer(sessionId),
-                            getColumnPath(name), ConsistencyLevel.ONE);
-                    return objectSerializer.fromBytes(result.getColumn().getValue());
-                } catch (InvalidRequestException e) {
-                    throw new RuntimeException(e);
-                } catch (NotFoundException e) {
-                    throw new RuntimeException(e);
-                } catch (UnavailableException e) {
-                    throw new RuntimeException(e);
-                } catch (TimedOutException e) {
-                    throw new RuntimeException(e);
-                } catch (TException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        });
+        ColumnQuery<String, String, Object> query = HFactory.createColumnQuery(keyspace, StringSerializer.get(),
+                StringSerializer.get(), ObjectSerializer.get());
+        query.setColumnFamily(getColumnFamilyName()).setKey(sessionId).setName(name);
+        //        QueryResult<HColumn<String, Object>> result = query.execute();
+        return query.execute().get().getValue();
     }
 
     @Override
     public void setAttribute(final String sessionId, final String name, final Object value) {
-        execute(new CassandraCallback<Void>() {
-            @Override
-            public Void doInCassandra(Client client) throws RuntimeException {
-                try {
-                    client.insert(stringSerializer.toByteBuffer(sessionId), getColumnParent(),
-                            getColumnForAttribute(name, value), ConsistencyLevel.ONE);
-                    return null;
-                } catch (InvalidRequestException e) {
-                    throw new RuntimeException(e);
-                } catch (UnavailableException e) {
-                    // maybe we can use another client
-                    throw new RuntimeException(e);
-                } catch (TimedOutException e) {
-                    // maybe we can use another client
-                    throw new RuntimeException(e);
-                } catch (TException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        });
+        Mutator<String> mutator = HFactory.createMutator(this.keyspace, StringSerializer.get());
+        mutator.insert(sessionId, this.columnFamilyName,
+                HFactory.createColumn(name, value, StringSerializer.get(), ObjectSerializer.get()));
     }
 
     @Override
     public void removeAttribute(final String sessionId, final String name) {
-        execute(new CassandraCallback<Void>() {
-            @Override
-            public Void doInCassandra(Client client) throws RuntimeException {
-                try {
-                    client.remove(stringSerializer.toByteBuffer(sessionId), getColumnPath(name),
-                            System.currentTimeMillis(), ConsistencyLevel.ONE);
-                    return null;
-                } catch (InvalidRequestException e) {
-                    throw new RuntimeException(e);
-                } catch (UnavailableException e) {
-                    // maybe we can use another client
-                    throw new RuntimeException(e);
-                } catch (TimedOutException e) {
-                    // maybe we can use another client
-                    throw new RuntimeException(e);
-                } catch (TException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        });
+        Mutator<String> mutator = HFactory.createMutator(this.keyspace, StringSerializer.get());
+        mutator.delete(sessionId, this.columnFamilyName, name, StringSerializer.get());
     }
 
     @Override
     public String[] keys(final String sessionId) {
-        return execute(new CassandraCallback<String[]>() {
-            @Override
-            public String[] doInCassandra(Client client) throws RuntimeException {
-                List<String> result = new ArrayList<String>();
-                try {
-                    List<KeySlice> keysliceList = getClient().get_range_slices(getColumnParent(), getSlicePredicate(),
-                            getKeyRange(), ConsistencyLevel.ONE);
-                    for (KeySlice keySlice : keysliceList) {
-                        if (stringSerializer.fromBytes(keySlice.getKey()).equals(sessionId)) {
-                            for (ColumnOrSuperColumn columnOrSuperColumn : keySlice.getColumns()) {
-                                if (columnOrSuperColumn.isSetColumn()) {
-                                    // it is not a supercolumn
-                                    Column column = columnOrSuperColumn.getColumn();
-                                    result.add(stringSerializer.fromBytes(column.getName()));
-                                }
-                            }
-                        }
-                    }
-                    return result.toArray(new String[result.size()]);
-                } catch (InvalidRequestException e) {
-                    throw new RuntimeException(e);
-                } catch (UnavailableException e) {
-                    throw new RuntimeException(e);
-                } catch (TimedOutException e) {
-                    throw new RuntimeException(e);
-                } catch (TException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        });
+        SliceQuery<String, String, String> sliceQuery = HFactory.createSliceQuery(this.keyspace,
+                StringSerializer.get(), StringSerializer.get(), StringSerializer.get());
+        sliceQuery.setColumnFamily(getColumnFamilyName()).setKey(sessionId);
+        ColumnSliceIterator<String, String, String> columnSliceIterator = new ColumnSliceIterator<String, String, String>(
+                sliceQuery, null, "\uFFFF", false);
+        List<String> resultList = new ArrayList<String>();
+        //
+        while (columnSliceIterator.hasNext()) {
+            resultList.add(columnSliceIterator.next().getName());
+        }
+        return resultList.toArray(new String[resultList.size()]);
     }
 
     @Override
     public Enumeration<String> getAttributeNames(String sessionId) {
-        // TODO Auto-generated method stub
         return null;
+    }
+
+    @Override
+    public void addSession(final String sessionId) {
+        long now = System.currentTimeMillis();
+        Mutator<String> mutator = HFactory.createMutator(this.keyspace, StringSerializer.get());
+        mutator.addInsertion(sessionId, getColumnFamilyName(),
+                HFactory.createColumn(CREATIONTIME_COLUMN_NAME, now, StringSerializer.get(), LongSerializer.get()));
+        mutator.addInsertion(sessionId, getColumnFamilyName(),
+                HFactory.createColumn(LAST_ACCESSTIME_COLUMN_NAME, now, StringSerializer.get(), LongSerializer.get()));
+        mutator.execute();
     }
 
     @Override
     public List<String> findSessionKeys() {
-        return execute(new CassandraCallback<List<String>>() {
-            @Override
-            public List<String> doInCassandra(Client client) throws RuntimeException {
-                List<String> result = new ArrayList<String>();
-                try {
-                    List<KeySlice> keysliceList = getClient().get_range_slices(getColumnParent(), getSlicePredicate(),
-                            getKeyRange(), ConsistencyLevel.ONE);
-                    for (KeySlice keySlice : keysliceList) {
-                        result.add(new String(keySlice.getKey()));
-                    }
-                    return result;
-                } catch (InvalidRequestException e) {
-                    throw new RuntimeException(e);
-                } catch (UnavailableException e) {
-                    throw new RuntimeException(e);
-                } catch (TimedOutException e) {
-                    throw new RuntimeException(e);
-                } catch (TException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        });
+        List<String> resultList = new ArrayList<String>();
+        RangeSlicesQuery<String, String, String> rangeSlicesQuery = HFactory.createRangeSlicesQuery(this.keyspace,
+                StringSerializer.get(), StringSerializer.get(), StringSerializer.get());
+        rangeSlicesQuery.setColumnFamily(this.columnFamilyName);
+        rangeSlicesQuery.setKeys("", "");
+        rangeSlicesQuery.setReturnKeysOnly();
+
+        //        rangeSlicesQuery.setRowCount(500);
+
+        QueryResult<OrderedRows<String, String, String>> result = rangeSlicesQuery.execute();
+        for (Row<String, String, String> row : result.get().getList()) {
+            resultList.add(row.getKey());
+        }
+        return resultList;
     }
 
     @Override
     public void removeSession(final String sessionId) {
-        execute(new CassandraCallback<Void>() {
-            @Override
-            public Void doInCassandra(Client client) throws RuntimeException {
-                try {
-                    client.remove(stringSerializer.toByteBuffer(sessionId), getEmptyColumnPathForFamily(),
-                            System.currentTimeMillis(), ConsistencyLevel.QUORUM);
-                    return null;
-                } catch (InvalidRequestException e) {
-                    throw new RuntimeException(e);
-                } catch (UnavailableException e) {
-                    // maybe we can use another client
-                    throw new RuntimeException(e);
-                } catch (TimedOutException e) {
-                    // maybe we can use another client
-                    throw new RuntimeException(e);
-                } catch (TException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        });
+        Mutator<String> mutator = HFactory.createMutator(this.keyspace, StringSerializer.get());
+        mutator.delete(sessionId, this.columnFamilyName, null, StringSerializer.get());
     }
 
-    // Utilities
-
-    protected Column getColumnForCreationTime(long value) {
-        return getColumnForName("METADATA-CREATIONTIME", longSerializer.toByteBuffer(value));
+    public String getColumnFamilyName() {
+        return columnFamilyName;
     }
 
-    protected Column getColumnForLastAccessedTime(long value) {
-        return getColumnForName("METADATA-LASTACCESSEDTIME", longSerializer.toByteBuffer(value));
+    public void setColumnFamilyName(String columnFamilyName) {
+        this.columnFamilyName = columnFamilyName;
     }
 
-    protected Column getColumnForAttribute(String name, Object value) {
-        return getColumnForName(name, objectSerializer.toByteBuffer(value));
+    public String getClusterName() {
+        return clusterName;
     }
 
-    protected Column getColumnForName(String name, ByteBuffer byteBuffer) {
-        Column column = new Column();
-        column.setName(stringSerializer.toByteBuffer(name));
-        column.setValue(byteBuffer);
-        column.setTimestamp(System.currentTimeMillis());
-        return column;
+    public void setClusterName(String clusterName) {
+        this.clusterName = clusterName;
     }
 
-    protected SlicePredicate getSlicePredicate() {
-        SlicePredicate predicate = new SlicePredicate();
-        SliceRange range = new SliceRange();
-        range.setStart(new byte[0]);
-        range.setFinish(new byte[0]);
-        range.setCount(9000);
-        predicate.setSlice_range(range);
-        return predicate;
+    public String getKeyspaceName() {
+        return keyspaceName;
     }
 
-    protected KeyRange getKeyRange() {
-        KeyRange keyRange = new KeyRange();
-        keyRange.setStart_token(BigInteger.ZERO.toString());
-        keyRange.setEnd_token(MAX.toString());
-        return keyRange;
+    public void setKeyspaceName(String keyspaceName) {
+        this.keyspaceName = keyspaceName;
     }
 
-    protected ColumnParent getColumnParent() {
-        ColumnParent columnParent = new ColumnParent();
-        columnParent.setColumn_family(CF_NAME);
-        return columnParent;
+    public String getHosts() {
+        return hosts;
     }
 
-    protected ColumnPath getEmptyColumnPathForFamily() {
-        ColumnPath columnPath = new ColumnPath();
-        columnPath.setColumn_family(getColumnFamily());
-        return columnPath;
+    public void setHosts(String hosts) {
+        this.hosts = hosts;
     }
 
-    protected String getColumnFamily() {
-        return null;
+    public int getMaxActive() {
+        return maxActive;
     }
 
-    protected ColumnPath getColumnPath(String columnName) {
-        ColumnPath columnPath = new ColumnPath();
-        columnPath.setColumn_family("");
-        columnPath.setColumn(stringSerializer.toByteBuffer(columnName));
-        return columnPath;
+    public void setMaxActive(int maxActive) {
+        this.maxActive = maxActive;
     }
 
-    protected static ByteBuffer idToByteBuffer(String sessionId) {
-        byte[] idBytes = new byte[0];
-        try {
-            idBytes = sessionId.getBytes("UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e.getMessage(), e);
-        }
-        return ByteBuffer.wrap(idBytes);
+    public int getMaxIdle() {
+        return maxIdle;
     }
 
-    static class SingleRowKeyRange {
-
-        public static KeyRange get(String key) {
-            KeyRange keyRange = new KeyRange();
-            keyRange.setStart_token(key);
-            keyRange.setEnd_token(key);
-            return keyRange;
-        }
+    public void setMaxIdle(int maxIdle) {
+        this.maxIdle = maxIdle;
     }
+
+    public int getThriftSocketTimeout() {
+        return thriftSocketTimeout;
+    }
+
+    public void setThriftSocketTimeout(int thriftSocketTimeout) {
+        this.thriftSocketTimeout = thriftSocketTimeout;
+    }
+
+    public long getMaxWaitTimeWhenExhausted() {
+        return maxWaitTimeWhenExhausted;
+    }
+
+    public void setMaxWaitTimeWhenExhausted(long maxWaitTimeWhenExhausted) {
+        this.maxWaitTimeWhenExhausted = maxWaitTimeWhenExhausted;
+    }
+
+    public String getStrategyClassName() {
+        return strategyClassName;
+    }
+
+    public void setStrategyClassName(String strategyClassName) {
+        this.strategyClassName = strategyClassName;
+    }
+
+    public int getReplicationFactor() {
+        return replicationFactor;
+    }
+
+    public void setReplicationFactor(int replicationFactor) {
+        this.replicationFactor = replicationFactor;
+    }
+
 }

@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.catalina.Container;
+import org.apache.catalina.LifecycleException;
 import org.apache.catalina.Loader;
 import org.apache.catalina.Session;
 import org.apache.catalina.session.ManagerBase;
@@ -29,7 +30,7 @@ public class CassandraManager extends ManagerBase {
     protected String name = "cassandra-manager";
     protected AtomicInteger rejected = new AtomicInteger(0);
 
-    protected CassandraOperations cassandraOperations;
+    protected CassandraTemplate cassandraTemplate = new CassandraTemplate();
 
     void setName(String name) {
         this.name = name;
@@ -45,25 +46,13 @@ public class CassandraManager extends ManagerBase {
         return info;
     }
 
-    CassandraOperations getCassandraOperations() {
-        return this.cassandraOperations;
+    protected CassandraOperations getCassandraOperations() {
+        return this.cassandraTemplate;
     }
 
-    protected void setCassandraOperations(CassandraOperations cassandraOperations) {
-        this.cassandraOperations = cassandraOperations;
+    protected void setCassandraTemplate(CassandraTemplate cassandraTemplate) {
+        this.cassandraTemplate = cassandraTemplate;
     }
-
-    //    public  void setDefaultQosParameters(QosParameters qos) {
-    //            riak.setDefaultQosParameters(qos)
-    //          }
-
-    //    QosParameters getDefaultQosParameters() {
-    //            return riak.getDefaultQosParameters()
-    //          }
-
-    //    RiakTemplate getRiakTemplate() {
-    //            return riak
-    //          }
 
     public ClassLoader getClassLoader() {
         ClassLoader clazzLoader = getClass().getClassLoader();
@@ -109,15 +98,19 @@ public class CassandraManager extends ManagerBase {
     }
 
     @Override
+    protected void startInternal() throws LifecycleException {
+        this.cassandraTemplate.initialize();
+        super.startInternal();
+    }
+
+    @Override
     public void unload() {
         // NO-OP
     }
 
     @Override
     public void add(Session session) {
-        // maybe we can do this with only on server-roundtrip
-        getCassandraOperations().setLastAccessedTime(session.getId(), System.currentTimeMillis());
-        getCassandraOperations().setCreationTime(session.getId(), System.currentTimeMillis());
+        getCassandraOperations().addSession(session.getId());
         //            def metadata = [
         //                creationTime: System.currentTimeMillis(),
         //                lastAccessedTime: System.currentTimeMillis()
@@ -266,6 +259,88 @@ public class CassandraManager extends ManagerBase {
             sessionCounter++;
         }
         return session;
+    }
+
+    // GETTER-SETTER
+
+    public String getColumnFamilyName() {
+        return this.cassandraTemplate.getColumnFamilyName();
+    }
+
+    public void setColumnFamilyName(String columnFamilyName) {
+        this.cassandraTemplate.setColumnFamilyName(columnFamilyName);
+    }
+
+    public String getClusterName() {
+        return this.cassandraTemplate.getClusterName();
+    }
+
+    public void setClusterName(String clusterName) {
+        this.cassandraTemplate.setClusterName(clusterName);
+    }
+
+    public String getKeyspaceName() {
+        return this.cassandraTemplate.getKeyspaceName();
+    }
+
+    public void setKeyspaceName(String keyspaceName) {
+        this.cassandraTemplate.setKeyspaceName(keyspaceName);
+    }
+
+    public String getHosts() {
+        return this.cassandraTemplate.getHosts();
+    }
+
+    public void setHosts(String hosts) {
+        this.cassandraTemplate.setHosts(hosts);
+    }
+
+    public int getMaxActiveConnections() {
+        return this.cassandraTemplate.getMaxActive();
+    }
+
+    public void setMaxActiveConnections(int maxActive) {
+        this.cassandraTemplate.setMaxActive(maxActive);
+    }
+
+    public int getMaxIdle() {
+        return this.cassandraTemplate.getMaxIdle();
+    }
+
+    public void setMaxIdle(int maxIdle) {
+        this.cassandraTemplate.setMaxIdle(maxIdle);
+    }
+
+    public int getThriftSocketTimeout() {
+        return this.cassandraTemplate.getThriftSocketTimeout();
+    }
+
+    public void setThriftSocketTimeout(int thriftSocketTimeout) {
+        this.cassandraTemplate.setThriftSocketTimeout(thriftSocketTimeout);
+    }
+
+    public long getMaxWaitTimeWhenExhausted() {
+        return this.cassandraTemplate.getMaxWaitTimeWhenExhausted();
+    }
+
+    public void setMaxWaitTimeWhenExhausted(long maxWaitTimeWhenExhausted) {
+        this.cassandraTemplate.setMaxWaitTimeWhenExhausted(maxWaitTimeWhenExhausted);
+    }
+
+    public String getStrategyClassName() {
+        return this.cassandraTemplate.getStrategyClassName();
+    }
+
+    public void setStrategyClassName(String strategyClassName) {
+        this.cassandraTemplate.setStrategyClassName(strategyClassName);
+    }
+
+    public int getReplicationFactor() {
+        return this.cassandraTemplate.getReplicationFactor();
+    }
+
+    public void setReplicationFactor(int replicationFactor) {
+        this.cassandraTemplate.setReplicationFactor(replicationFactor);
     }
 
 }
