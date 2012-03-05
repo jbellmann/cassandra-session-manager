@@ -2,6 +2,7 @@ package de.jbellmann.tomcat.cassandra;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 
@@ -154,7 +155,7 @@ public class CassandraTemplate implements CassandraOperations {
 
     @Override
     public Enumeration<String> getAttributeNames(String sessionId) {
-        return null;
+        return Collections.enumeration(Arrays.asList(keys(sessionId)));
     }
 
     @Override
