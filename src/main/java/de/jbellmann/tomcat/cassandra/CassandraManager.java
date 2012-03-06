@@ -9,12 +9,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.catalina.Container;
 import org.apache.catalina.LifecycleException;
+import org.apache.catalina.LifecycleState;
 import org.apache.catalina.Loader;
 import org.apache.catalina.Session;
 import org.apache.catalina.session.ManagerBase;
 import org.apache.catalina.session.StandardSession;
+import org.apache.commons.lang.StringUtils;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
+import org.apache.tomcat.util.ExceptionUtils;
 
 /**
  * 
@@ -67,7 +70,6 @@ public class CassandraManager extends ManagerBase {
             }
         }
         return clazzLoader;
-        //        return container?.loader?.classLoader ?: getClass().getClassLoader()
     }
 
     @Override
@@ -99,8 +101,64 @@ public class CassandraManager extends ManagerBase {
 
     @Override
     protected void startInternal() throws LifecycleException {
-        this.cassandraTemplate.initialize();
+        log.info("Starting Cassandra Session Manager");
+        try {
+            this.cassandraTemplate.initialize();
+        } catch (Throwable t) {
+            ExceptionUtils.handleThrowable(t);
+            log.error(sm.getString("standardManager.managerLoad"), t);
+        }
         super.startInternal();
+        // Load unloaded sessions, if any
+        try {
+            load();
+        } catch (Throwable t) {
+            ExceptionUtils.handleThrowable(t);
+            log.error(sm.getString("standardManager.managerLoad"), t);
+        }
+
+        setState(LifecycleState.STARTING);
+        log.info("Cassandra Session Manager started");
+    }
+
+    @Override
+    protected void stopInternal() throws LifecycleException {
+        log.info("Stopping Cassandra Session Manager");
+        try {
+            this.cassandraTemplate.shutdown();
+        } catch (Throwable t) {
+            ExceptionUtils.handleThrowable(t);
+            log.error(sm.getString("standardManager.managerUnload"), t);
+        }
+        setState(LifecycleState.STOPPING);
+
+        // Write out sessions
+        try {
+            unload();
+        } catch (Throwable t) {
+            ExceptionUtils.handleThrowable(t);
+            log.error(sm.getString("standardManager.managerUnload"), t);
+        }
+
+        // Expire all active sessions
+        Session sessions[] = findSessions();
+        for (int i = 0; i < sessions.length; i++) {
+            Session session = sessions[i];
+            try {
+                if (session.isValid()) {
+                    session.expire();
+                }
+            } catch (Throwable t) {
+                ExceptionUtils.handleThrowable(t);
+            } finally {
+                // Measure against memory leaking if references to the session
+                // object are kept in a shared field somewhere
+                session.recycle();
+            }
+        }
+        log.info("Cassandra Session Manager stopped");
+        // Require a new random number generator if we are restarted
+        super.stopInternal();
     }
 
     @Override
@@ -252,12 +310,16 @@ public class CassandraManager extends ManagerBase {
         session.setNew(true);
         session.setValid(true);
         session.setMaxInactiveInterval(maxInactiveInterval);
-        if (sessionId != null) {
-            session.setIdInternal(generateSessionId());
-            session.setCreationTime(System.currentTimeMillis());
-            session.setLastAccessedTime(System.currentTimeMillis());
-            sessionCounter++;
+        String id = sessionId;
+        if (StringUtils.isBlank(id)) {
+            log.warn("create session with blank sessionId");
+            id = generateSessionId();
         }
+        session.setId(id, false);
+        session.setCreationTime(System.currentTimeMillis());
+        session.setLastAccessedTime(System.currentTimeMillis());
+        sessionCounter++;
+        //
         return session;
     }
 

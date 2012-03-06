@@ -13,6 +13,7 @@ import me.prettyprint.cassandra.service.CassandraHostConfigurator;
 import me.prettyprint.cassandra.service.ColumnSliceIterator;
 import me.prettyprint.hector.api.Cluster;
 import me.prettyprint.hector.api.Keyspace;
+import me.prettyprint.hector.api.beans.HColumn;
 import me.prettyprint.hector.api.beans.OrderedRows;
 import me.prettyprint.hector.api.beans.Row;
 import me.prettyprint.hector.api.ddl.ColumnFamilyDefinition;
@@ -25,10 +26,26 @@ import me.prettyprint.hector.api.query.QueryResult;
 import me.prettyprint.hector.api.query.RangeSlicesQuery;
 import me.prettyprint.hector.api.query.SliceQuery;
 
+import org.apache.juli.logging.Log;
+import org.apache.juli.logging.LogFactory;
+
+/**
+ * Implementation for Cassandra-Data-Access.
+ * 
+ * @author Joerg Bellmann
+ *
+ */
 public class CassandraTemplate implements CassandraOperations {
 
     public static final String CREATIONTIME_COLUMN_NAME = "METADATA-CREATIONTIME";
     public static final String LAST_ACCESSTIME_COLUMN_NAME = "METADATA-LASTACCESSTIME";
+
+    private static final List<String> SPECIAL_ATTRIBUTES = new ArrayList<String>();
+
+    static {
+        SPECIAL_ATTRIBUTES.add(CREATIONTIME_COLUMN_NAME);
+        SPECIAL_ATTRIBUTES.add(LAST_ACCESSTIME_COLUMN_NAME);
+    }
 
     public static final String DEFAULT_CLUSTER_NAME = "TOMCAT_SESSION_MANAGER_CLUSTER";
     public static final String DEFAULT_KEYSPACE_NAME = "TOMCAT_SESSION_MANAGER_KEYSPACE";
@@ -37,6 +54,8 @@ public class CassandraTemplate implements CassandraOperations {
     public static final String DEFAULT_STRATEGY_CLASS_NAME = "org.apache.cassandra.locator.SimpleStrategy";
 
     public static final int DEFAULT_REPLICATION_FACTOR = 1;
+
+    private final Log log = LogFactory.getLog(CassandraTemplate.class);
 
     protected Cluster getCluster() {
         return this.cluster;
@@ -65,6 +84,7 @@ public class CassandraTemplate implements CassandraOperations {
     private long maxWaitTimeWhenExhausted = 4000;
 
     public void initialize() {
+        log.info("Initialize Cassandra Template ...");
         cluster = HFactory.getOrCreateCluster(getClusterName(), getCassandraHostConfigurator());
         // ColumnFamilyDefinition
         ColumnFamilyDefinition columnFamilyDefinition = HFactory.createColumnFamilyDefinition(getKeyspaceName(),
@@ -76,6 +96,13 @@ public class CassandraTemplate implements CassandraOperations {
         cluster.addKeyspace(keyspaceDefinition, true);
 
         keyspace = HFactory.createKeyspace(getKeyspaceName(), cluster);
+        log.info("Cassandra-Template initialized");
+    }
+
+    public void shutdown() {
+        log.info("Release Connections ...");
+        this.cluster.getConnectionManager().shutdown();
+        log.info("Connections released");
     }
 
     protected CassandraHostConfigurator getCassandraHostConfigurator() {
@@ -96,13 +123,15 @@ public class CassandraTemplate implements CassandraOperations {
 
     @Override
     public void setCreationTime(final String sessionId, final long time) {
+        log.info("Set CREATION_TIME for Session : " + sessionId + " to value " + time);
         Mutator<String> mutator = HFactory.createMutator(this.keyspace, StringSerializer.get());
         mutator.insert(sessionId, this.columnFamilyName,
                 HFactory.createColumn(CREATIONTIME_COLUMN_NAME, time, StringSerializer.get(), LongSerializer.get()));
     }
 
     @Override
-    public long getLastAccessedTime(String sessionId) {
+    public long getLastAccessedTime(final String sessionId) {
+        log.info("Get LAST_ACCESSED_TIME for Session : " + sessionId);
         ColumnQuery<String, String, Long> query = HFactory.createColumnQuery(keyspace, StringSerializer.get(),
                 StringSerializer.get(), LongSerializer.get());
         query.setColumnFamily(getColumnFamilyName()).setKey(sessionId).setName(LAST_ACCESSTIME_COLUMN_NAME);
@@ -111,6 +140,7 @@ public class CassandraTemplate implements CassandraOperations {
 
     @Override
     public void setLastAccessedTime(final String sessionId, final long time) {
+        log.info("Set LAST_ACCESSED_TIME for Session : " + sessionId + " to value " + time);
         Mutator<String> mutator = HFactory.createMutator(this.keyspace, StringSerializer.get());
         mutator.insert(sessionId, this.columnFamilyName,
                 HFactory.createColumn(LAST_ACCESSTIME_COLUMN_NAME, time, StringSerializer.get(), LongSerializer.get()));
@@ -118,15 +148,17 @@ public class CassandraTemplate implements CassandraOperations {
 
     @Override
     public Object getAttribute(final String sessionId, final String name) {
+        log.info("Get attribute '" + name + "' for Session : " + sessionId);
         ColumnQuery<String, String, Object> query = HFactory.createColumnQuery(keyspace, StringSerializer.get(),
                 StringSerializer.get(), ObjectSerializer.get());
         query.setColumnFamily(getColumnFamilyName()).setKey(sessionId).setName(name);
-        //        QueryResult<HColumn<String, Object>> result = query.execute();
-        return query.execute().get().getValue();
+        QueryResult<HColumn<String, Object>> result = query.execute();
+        return result.get().getValue();
     }
 
     @Override
     public void setAttribute(final String sessionId, final String name, final Object value) {
+        log.info("Set attribute '" + name + "' for Session : " + sessionId);
         Mutator<String> mutator = HFactory.createMutator(this.keyspace, StringSerializer.get());
         mutator.insert(sessionId, this.columnFamilyName,
                 HFactory.createColumn(name, value, StringSerializer.get(), ObjectSerializer.get()));
@@ -134,6 +166,7 @@ public class CassandraTemplate implements CassandraOperations {
 
     @Override
     public void removeAttribute(final String sessionId, final String name) {
+        log.info("Remove attribute '" + name + "' for Session : " + sessionId);
         Mutator<String> mutator = HFactory.createMutator(this.keyspace, StringSerializer.get());
         mutator.delete(sessionId, this.columnFamilyName, name, StringSerializer.get());
     }
@@ -148,7 +181,12 @@ public class CassandraTemplate implements CassandraOperations {
         List<String> resultList = new ArrayList<String>();
         //
         while (columnSliceIterator.hasNext()) {
-            resultList.add(columnSliceIterator.next().getName());
+            String columnName = columnSliceIterator.next().getName();
+            if (SPECIAL_ATTRIBUTES.contains(columnName)) {
+                //skip this columns, not serialized as objects
+            } else {
+                resultList.add(columnName);
+            }
         }
         return resultList.toArray(new String[resultList.size()]);
     }
