@@ -24,6 +24,8 @@ public class CassandraTemplateIT {
     public void testSetCreationTime() throws InterruptedException {
         CassandraTemplate template = new TestCassandraTemplate();
         template.initialize();
+        // testnonex
+
         for (int i = 0; i < 20; i++) {
             template.setCreationTime(createRandomSessionId(), System.currentTimeMillis());
         }
@@ -58,6 +60,18 @@ public class CassandraTemplateIT {
             //            Assert.assertTrue("Should have a column", keys.length > 0);
             System.out.println("For session " + sessionId + " found keys: " + Arrays.asList(keys).toString());
         }
+    }
+
+    @Test
+    public void testSessionNotExists() {
+        CassandraTemplate template = new TestCassandraTemplate();
+        template.initialize();
+        String testSessionId = UUID.randomUUID().toString().replace("-", "");
+        long lasAccessedTime = template.getLastAccessedTime(testSessionId);
+        long testcreationTime = template.getCreationTime(testSessionId);
+
+        Assert.assertEquals("Should be -1 because it does not exist in db", -1, lasAccessedTime);
+        Assert.assertEquals("Should be -1 because it does not exist in db", -1, testcreationTime);
     }
 
     protected String createRandomSessionId() {
