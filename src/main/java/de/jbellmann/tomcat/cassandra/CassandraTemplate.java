@@ -55,6 +55,8 @@ public class CassandraTemplate implements CassandraOperations {
 
     public static final int DEFAULT_REPLICATION_FACTOR = 1;
 
+    public static final boolean DEFAULT_LOG_SESSIONS_ON_STARTUP = false;
+
     private final Log log = LogFactory.getLog(CassandraTemplate.class);
 
     protected Cluster getCluster() {
@@ -83,6 +85,8 @@ public class CassandraTemplate implements CassandraOperations {
     private int thriftSocketTimeout = 3000;
     private long maxWaitTimeWhenExhausted = 4000;
 
+    private boolean logSessionsOnStartup = DEFAULT_LOG_SESSIONS_ON_STARTUP;
+
     public void initialize() {
         log.info("Initialize Cassandra Template ...");
         cluster = HFactory.getOrCreateCluster(getClusterName(), getCassandraHostConfigurator());
@@ -101,6 +105,13 @@ public class CassandraTemplate implements CassandraOperations {
 
         keyspace = HFactory.createKeyspace(getKeyspaceName(), cluster);
         log.info("Cassandra-Template initialized");
+        if (isLogSessionsOnStartup()) {
+            List<String> sessionIdList = findSessionKeys();
+            log.info("Found " + sessionIdList.size() + " Sessions in DB");
+            for (final String sessionId : sessionIdList) {
+                log.info("SessionId found : " + sessionId);
+            }
+        }
     }
 
     public void shutdown() {
@@ -316,6 +327,14 @@ public class CassandraTemplate implements CassandraOperations {
 
     public void setReplicationFactor(int replicationFactor) {
         this.replicationFactor = replicationFactor;
+    }
+
+    public boolean isLogSessionsOnStartup() {
+        return logSessionsOnStartup;
+    }
+
+    public void setLogSessionsOnStartup(boolean logSessionsOnStartup) {
+        this.logSessionsOnStartup = logSessionsOnStartup;
     }
 
 }

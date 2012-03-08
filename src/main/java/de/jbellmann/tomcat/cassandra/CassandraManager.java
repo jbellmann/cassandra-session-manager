@@ -405,4 +405,12 @@ public class CassandraManager extends ManagerBase {
         this.cassandraTemplate.setReplicationFactor(replicationFactor);
     }
 
+    public boolean isLogSessionsOnStartup() {
+        return this.cassandraTemplate.isLogSessionsOnStartup();
+    }
+
+    public void setLogSessionsOnStartup(boolean logSessionsOnStartup) {
+        this.cassandraTemplate.setLogSessionsOnStartup(logSessionsOnStartup);
+    }
+
 }

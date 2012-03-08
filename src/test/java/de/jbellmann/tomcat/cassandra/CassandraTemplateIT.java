@@ -65,6 +65,7 @@ public class CassandraTemplateIT {
     @Test
     public void testSessionNotExists() {
         CassandraTemplate template = new TestCassandraTemplate();
+        template.setLogSessionsOnStartup(true);
         template.initialize();
         String testSessionId = UUID.randomUUID().toString().replace("-", "");
         long lasAccessedTime = template.getLastAccessedTime(testSessionId);
