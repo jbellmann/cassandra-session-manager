@@ -92,8 +92,12 @@ public class CassandraTemplate implements CassandraOperations {
         // KeyspaceDefinition
         KeyspaceDefinition keyspaceDefinition = HFactory.createKeyspaceDefinition(getKeyspaceName(),
                 getStrategyClassName(), getReplicationFactor(), Arrays.asList(columnFamilyDefinition));
-        // keyspace to cluster
-        cluster.addKeyspace(keyspaceDefinition, true);
+
+        KeyspaceDefinition description = cluster.describeKeyspace(getKeyspaceName());
+        if (description == null) {
+            // keyspace to cluster
+            cluster.addKeyspace(keyspaceDefinition, true);
+        }
 
         keyspace = HFactory.createKeyspace(getKeyspaceName(), cluster);
         log.info("Cassandra-Template initialized");
