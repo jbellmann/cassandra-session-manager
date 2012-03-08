@@ -58,7 +58,7 @@ public class CassandraSession extends StandardSession {
     public long getLastAccessedTime() {
         if (StringUtils.isBlank(getId())) {
             log.warn("-- invoked when id was blank");
-            return 0;
+            return -1;
         }
         return getCassandraSessionOperations().getLastAccessedTime(getId());
         //            def metadata = getRiakTemplate().get(manager.name, id)
@@ -77,13 +77,23 @@ public class CassandraSession extends StandardSession {
 
     @Override
     public boolean isValid() {
+        if (this.expiring) {
+            return true;
+        }
+
         if (!this.isValid) {
+            return false;
+        }
+
+        long lastAccessedTime = getLastAccessedTime();
+        if (lastAccessedTime < 0) {
+            this.isValid = false;
             return false;
         }
 
         if (maxInactiveInterval >= 0) {
             long timeNow = System.currentTimeMillis();
-            int timeIdle = (int) ((timeNow - getLastAccessedTime()) / 1000L);
+            int timeIdle = (int) ((timeNow - lastAccessedTime) / 1000L);
             if (timeIdle >= maxInactiveInterval) {
                 expire(true);
             }
@@ -96,7 +106,7 @@ public class CassandraSession extends StandardSession {
     public long getCreationTime() {
         if (StringUtils.isBlank(getId())) {
             log.warn("-- invoked when id was blank");
-            return 0;
+            return -1;
         }
         return getCassandraSessionOperations().getCreationTime(getId());
         //            try {
