@@ -118,7 +118,8 @@ public class CassandraTemplate implements CassandraOperations {
         ColumnQuery<String, String, Long> query = HFactory.createColumnQuery(keyspace, StringSerializer.get(),
                 StringSerializer.get(), LongSerializer.get());
         query.setColumnFamily(getColumnFamilyName()).setKey(sessionId).setName(CREATIONTIME_COLUMN_NAME);
-        return query.execute().get().getValue();
+        HColumn<String, Long> column = query.execute().get();
+        return column != null ? column.getValue() : -1;
     }
 
     @Override
@@ -135,7 +136,8 @@ public class CassandraTemplate implements CassandraOperations {
         ColumnQuery<String, String, Long> query = HFactory.createColumnQuery(keyspace, StringSerializer.get(),
                 StringSerializer.get(), LongSerializer.get());
         query.setColumnFamily(getColumnFamilyName()).setKey(sessionId).setName(LAST_ACCESSTIME_COLUMN_NAME);
-        return query.execute().get().getValue();
+        HColumn<String, Long> column = query.execute().get();
+        return column != null ? column.getValue() : -1;
     }
 
     @Override
@@ -153,7 +155,8 @@ public class CassandraTemplate implements CassandraOperations {
                 StringSerializer.get(), ObjectSerializer.get());
         query.setColumnFamily(getColumnFamilyName()).setKey(sessionId).setName(name);
         QueryResult<HColumn<String, Object>> result = query.execute();
-        return result.get().getValue();
+        HColumn<String, Object> column = result.get();
+        return column != null ? column.getValue() : null;
     }
 
     @Override
