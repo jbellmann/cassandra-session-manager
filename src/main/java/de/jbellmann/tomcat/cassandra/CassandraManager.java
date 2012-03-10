@@ -14,7 +14,6 @@ import org.apache.catalina.Loader;
 import org.apache.catalina.Session;
 import org.apache.catalina.session.ManagerBase;
 import org.apache.catalina.session.StandardSession;
-import org.apache.commons.lang.StringUtils;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.apache.tomcat.util.ExceptionUtils;
@@ -81,11 +80,18 @@ public class CassandraManager extends ManagerBase {
         rejected.set(i);
     }
 
+    /**
+     * Should we really load all sessions. 10000, 1000000, 10000000000. Should we?
+     * 
+     */
     @Override
     public void load() {
         List<String> sessionIds = getCassandraOperations().findSessionKeys();
         for (String sessionId : sessionIds) {
             try {
+                if (log.isDebugEnabled()) {
+                    log.debug("Loading session : " + sessionId);
+                }
                 findSession(sessionId);
             } catch (IOException e) {
                 log.error("IOException on CassandraManager.load() with sessionId: " + sessionId, e);
@@ -188,10 +194,14 @@ public class CassandraManager extends ManagerBase {
             }
             return sess;
         }
-
-        sess = createSession(id);
-        ((CassandraSession) sess).setIdInternal(id);
-        sessions.put(id, sess);
+        long lastAccessedTime = getCassandraOperations().getLastAccessedTime(id);
+        if (lastAccessedTime < 0) {
+            // no session found in cassandra
+            return null;
+        } else {
+            sess = createSession(id);
+            sessions.put(sess.getId(), sess);
+        }
         return sess;
     }
 
@@ -311,11 +321,10 @@ public class CassandraManager extends ManagerBase {
         session.setValid(true);
         session.setMaxInactiveInterval(maxInactiveInterval);
         String id = sessionId;
-        if (StringUtils.isBlank(id)) {
-            log.warn("create session with blank sessionId");
+        if (id == null) {
             id = generateSessionId();
         }
-        session.setId(id, false);
+        session.setId(id, true);
         session.setCreationTime(System.currentTimeMillis());
         session.setLastAccessedTime(System.currentTimeMillis());
         sessionCounter++;

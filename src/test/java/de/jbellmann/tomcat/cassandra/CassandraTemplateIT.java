@@ -4,11 +4,16 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
+import javax.servlet.http.HttpSession;
+
+import org.apache.catalina.Context;
+import org.apache.catalina.connector.Request;
 import org.apache.thrift.transport.TTransportException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 public class CassandraTemplateIT {
 
@@ -73,6 +78,26 @@ public class CassandraTemplateIT {
 
         Assert.assertEquals("Should be -1 because it does not exist in db", -1, lasAccessedTime);
         Assert.assertEquals("Should be -1 because it does not exist in db", -1, testcreationTime);
+    }
+
+    public void testGetSession() {
+        String requestedSessionId = "REQUESTED_SESSION_ID";
+
+        Context context = Mockito.mock(Context.class);
+
+        CassandraTemplate template = new TestCassandraTemplate();
+        template.setLogSessionsOnStartup(true);
+        template.initialize();
+
+        CassandraManager manager = new CassandraManager();
+        manager.setCassandraTemplate(template);
+        Mockito.when(context.getManager()).thenReturn(manager);
+        Request request = new Request();
+        request.setContext(context);
+        // fake cookie sent a value
+        request.setRequestedSessionId(requestedSessionId);
+        HttpSession session = request.getSession();
+        Assert.assertFalse(requestedSessionId.equals(session.getId()));
     }
 
     protected String createRandomSessionId() {
