@@ -8,9 +8,58 @@
   <groupId>de.jbellmann.tomcat.cassandra</groupId>
   <artifactId>cassandra-session-manager-nodep</artifactId>
   <version>1.0.0-SNAPSHOT</version>
+  <name>Cassandra Tomcat Session Manager -- NoDep</name>
 
   <build>
     <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>1.5</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+                <artifactSet>
+                    <excludes>
+                        <exclude>javax*:*</exclude>
+                        <exclude>org.apache.tomcat:*</exclude>
+                        <exclude>commons-logging:*</exclude>
+                        <exclude>log4j:*</exclude>
+                        <exclude>org.mockito:*</exclude>
+                    </excludes>
+                </artifactSet>
+              <filters>
+                <filter>
+                  <artifact>${project.groupId}:cassandra-session-manager</artifact>
+                  <includes>
+                    <include>de/jbellmann/tomcat/cassandra/**</include>
+                  </includes>
+                </filter>
+                <filter>
+                  <artifact>*:*</artifact>
+                  <excludes>
+                    <exclude>META-INF/*.SF</exclude>
+                    <exclude>META-INF/*.DSA</exclude>
+                    <exclude>META-INF/*.RSA</exclude>
+                  </excludes>
+                </filter>
+              </filters>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
+  
+  <dependencies>
+    <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>cassandra-session-manager</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+  </dependencies>
 </project>
