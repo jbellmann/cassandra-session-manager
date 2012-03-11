@@ -20,6 +20,11 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+/**
+ * 
+ * @author Joerg Bellmann
+ *
+ */
 public class RequestTest {
 
     private static final String REQUESTED_SESSION_ID = "REQUESTED_SESSION_ID";

@@ -15,6 +15,11 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+/**
+ * 
+ * @author Joerg Bellmann
+ *
+ */
 public class CassandraTemplateIT {
 
     @Before

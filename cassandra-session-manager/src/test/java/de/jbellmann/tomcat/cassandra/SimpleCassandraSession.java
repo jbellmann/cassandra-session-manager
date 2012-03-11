@@ -2,6 +2,11 @@ package de.jbellmann.tomcat.cassandra;
 
 import org.apache.catalina.Manager;
 
+/**
+ * 
+ * @author Joerg Bellmann
+ *
+ */
 public class SimpleCassandraSession extends CassandraSession {
 
     public SimpleCassandraSession(Manager manager) {

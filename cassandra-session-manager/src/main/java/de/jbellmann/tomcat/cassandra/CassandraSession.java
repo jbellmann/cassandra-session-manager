@@ -17,7 +17,7 @@ import org.apache.juli.logging.LogFactory;
  * 
  * {@link CassandraTemplate} is available {@link CassandraManager}.
  * 
- * @author jbellmann
+ * @author Joerg Bellmann
  *
  */
 public class CassandraSession extends StandardSession {

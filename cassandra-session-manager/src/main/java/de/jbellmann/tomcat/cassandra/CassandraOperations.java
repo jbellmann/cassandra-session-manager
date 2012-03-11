@@ -3,6 +3,11 @@ package de.jbellmann.tomcat.cassandra;
 import java.util.Enumeration;
 import java.util.List;
 
+/**
+ * 
+ * @author Joerg Bellmann
+ *
+ */
 public interface CassandraOperations {
 
     // operations needed in Session

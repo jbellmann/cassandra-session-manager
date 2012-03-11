@@ -20,7 +20,7 @@ import org.apache.tomcat.util.ExceptionUtils;
 
 /**
  * 
- * @author jbellmann
+ * @author Joerg Bellmann
  *
  */
 public class CassandraManager extends ManagerBase {

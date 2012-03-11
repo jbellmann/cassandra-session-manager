@@ -6,6 +6,11 @@ import javax.servlet.ServletContext;
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpSessionContext;
 
+/**
+ * 
+ * @author Joerg Bellmann
+ *
+ */
 public class CassandraSessionFacade implements HttpSession {
 
     private final CassandraSession cassandraSession;

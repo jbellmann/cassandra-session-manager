@@ -10,6 +10,11 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+/**
+ * 
+ * @author Joerg Bellmann
+ *
+ */
 public class CassandraManagerTest {
 
     private final static String TEST_SESSION_ID = "123456789";
