@@ -97,12 +97,6 @@ public class CassandraManager extends ManagerBase {
                 log.error("IOException on CassandraManager.load() with sessionId: " + sessionId, e);
             }
         }
-        //            riak.getBucketSchema(name, true)?.keys?.each {
-        //              if (log.isDebugEnabled()) {
-        //                log.debug("Loading session $it");
-        //              }
-        //              findSession(it);
-        //            }
     }
 
     @Override
@@ -175,14 +169,6 @@ public class CassandraManager extends ManagerBase {
     @Override
     public void add(Session session) {
         getCassandraOperations().addSession(session.getId());
-        //            def metadata = [
-        //                creationTime: System.currentTimeMillis(),
-        //                lastAccessedTime: System.currentTimeMillis()
-        //            ]
-        //            if (log.debugEnabled) {
-        //              log.debug "Saving session ${session.id}"
-        //            }
-        //            riak.set(name, session.id, metadata)
     }
 
     @Override
@@ -230,17 +216,11 @@ public class CassandraManager extends ManagerBase {
             }
         }
         return sessions.toArray(new Session[sessions.size()]);
-        //            def s = []
-        //            riak.getBucketSchema(name, true)?.keys?.each {
-        //              s << findSession(it)
-        //            }
-        //            return s.toArray(new Session[s.size()])
     }
 
     @Override
     public void remove(Session session) {
         getCassandraOperations().removeSession(session.getId());
-        //        riak.delete(name, session.id);
     }
 
     @Override
@@ -264,23 +244,12 @@ public class CassandraManager extends ManagerBase {
         if (session != null) {
             session.expire();
         }
-        //            findSession(sessionId)?.expire()
     }
 
     @Override
     public String getCreationTime(String sessionId) {
         Session session = findSessionInternal(sessionId);
         return session != null ? new Date(session.getCreationTime()).toString() : "";
-        //        try {
-        //            session = findSession(sessionId);
-        //        } catch (IOException e) {
-        //            log.error("IOException on CassandraManager.getCreationTime()-method with sessionId " + sessionId, e);
-        //        }
-        //        if (session != null) {
-        //            return new Date(session.getCreationTime()).toString();
-        //        }
-        //        return "";
-        //            return findSession(sessionId)?.getCreationTime()
     }
 
     @Override
@@ -293,20 +262,17 @@ public class CassandraManager extends ManagerBase {
     public long getLastAccessedTimestamp(String sessionId) {
         Session session = findSessionInternal(sessionId);
         return session != null ? session.getLastAccessedTime() : -1;
-        //            return findSession(sessionId)?.getLastAccessedTime()
     }
 
     @Override
     public String getLastAccessedTime(String sessionId) {
         Session session = findSessionInternal(sessionId);
         return session != null ? new Date(session.getLastAccessedTime()).toString() : "";
-        //            return findSession(sessionId)?.getCreationTime()
     }
 
     @Override
     public String getSessionAttribute(String sessionId, String key) {
         return getCassandraOperations().getAttribute(sessionId, key).toString();
-        //            return findSession(sessionId)?.getAttribute(key)
     }
 
     @Override

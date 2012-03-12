@@ -49,9 +49,6 @@ public class CassandraSession extends StandardSession {
             return;
         }
         getCassandraSessionOperations().setLastAccessedTime(getId(), time);
-        //            def metadata = getRiakTemplate().get(manager.name, id)
-        //            metadata.lastAccessedTime = time
-        //            getRiakTemplate().set(manager.name, id, metadata)
     }
 
     @Override
@@ -61,8 +58,6 @@ public class CassandraSession extends StandardSession {
             return -1;
         }
         return getCassandraSessionOperations().getLastAccessedTime(getId());
-        //            def metadata = getRiakTemplate().get(manager.name, id)
-        //            return this.
     }
 
     @Override
@@ -109,12 +104,6 @@ public class CassandraSession extends StandardSession {
             return -1;
         }
         return getCassandraSessionOperations().getCreationTime(getId());
-        //            try {
-        //              def metadata = getRiakTemplate().get(manager.name, id)
-        //              return metadata.creationTime
-        //            } catch (ResourceAccessException notFound) {
-        //              return null;
-        //            }
     }
 
     @Override
@@ -124,13 +113,11 @@ public class CassandraSession extends StandardSession {
             return;
         }
         getCassandraSessionOperations().removeAttribute(getId(), name);
-        //            getRiakTemplate().delete(getId(), name)
     }
 
     @Override
     public void removeAttribute(String name, boolean notify) {
         removeAttribute(name);
-        //            removeAttribute(getId(), name);
     }
 
     @Override
@@ -140,7 +127,6 @@ public class CassandraSession extends StandardSession {
             return;
         }
         getCassandraSessionOperations().setAttribute(getId(), name, value);
-        //            getRiakTemplate().set(getId(), name, value)
     }
 
     @Override
@@ -155,15 +141,11 @@ public class CassandraSession extends StandardSession {
             return null;
         }
         return getCassandraSessionOperations().getAttribute(getId(), name);
-        //            getRiakTemplate().get(getId(), name)
     }
 
     @Override
     public Enumeration<String> getAttributeNames() {
         return Collections.enumeration(Arrays.asList(keys()));
-        //        return getCassandraSessionOperations().getAttributeNames(getId());
-        //            def schema = getRiakTemplate().getBucketSchema(getId(), true)
-        //            return Collections.enumeration(schema.keys)
     }
 
     @Override
@@ -173,16 +155,23 @@ public class CassandraSession extends StandardSession {
             return new String[0];
         }
         return getCassandraSessionOperations().keys(getId());
-        //            Map<String, Object> schema = getRiakTemplate().getBucketSchema(manager.name, id, true);
-        //            return schema.keys;
     }
-
-    //          RiakTemplate getRiakTemplate() {
-    //            return ((RiakManager) manager).getRiakTemplate()
-    //          }
 
     CassandraOperations getCassandraSessionOperations() {
         return ((CassandraManager) manager).getCassandraOperations();
     }
 
+    /**
+     * Return a string representation of this object.
+     */
+    @Override
+    public String toString() {
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("CassandraSession[");
+        sb.append(id);
+        sb.append("]");
+        return (sb.toString());
+
+    }
 }

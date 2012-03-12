@@ -7,6 +7,7 @@ import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpSessionContext;
 
 /**
+ * This facade is used to prevent downcasting to a concrete implementation.
  * 
  * @author Joerg Bellmann
  *
