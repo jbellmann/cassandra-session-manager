@@ -41,6 +41,13 @@
                   </includes>
                 </filter>
                 <filter>
+                    <artifact>com.google.guava:guava</artifact>
+                    <includes>
+                        <include>com/google/common/base/**</include>
+                        <include>com/google/common/collect/**</include>
+                    </includes>
+                </filter>
+                <filter>
                     <artifact>commons-lang:commons-lang</artifact>
                     <includes>
                         <include>org/apache/commons/lang/StringUtils.class</include>
