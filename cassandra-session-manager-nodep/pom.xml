@@ -28,6 +28,7 @@
                         <exclude>javax*:*</exclude>
                         <exclude>org.apache.tomcat:*</exclude>
                         <exclude>commons-logging:*</exclude>
+                        <exclude>org.slf4j:slf4j-log4j12</exclude>
                         <exclude>log4j:*</exclude>
                         <exclude>org.mockito:*</exclude>
                     </excludes>
@@ -38,6 +39,12 @@
                   <includes>
                     <include>de/jbellmann/tomcat/cassandra/**</include>
                   </includes>
+                </filter>
+                <filter>
+                    <artifact>commons-lang:commons-lang</artifact>
+                    <includes>
+                        <include>org/apache/commons/lang/StringUtils.class</include>
+                    </includes>
                 </filter>
                 <filter>
                   <artifact>*:*</artifact>
