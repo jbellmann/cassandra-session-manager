@@ -1,3 +1,18 @@
+/**
+ * Copyright 2012 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package de.jbellmann.tomcat.cassandra;
 
 import java.util.ArrayList;
@@ -55,6 +70,11 @@ public class CassandraTemplate implements CassandraOperations {
 
     public static final int DEFAULT_REPLICATION_FACTOR = 1;
 
+    public static final int DEFAULT_MAX_ACTIVE = 20;
+    public static final int DEFAULT_MAX_IDLE = 5;
+    public static final int DEFAULT_THRIFT_SOCKET_TIMEOUT = 3000;
+    public static final int DEFAULT_MAX_TIME_WHEN_EXHAUSTED = 4000;
+
     public static final boolean DEFAULT_LOG_SESSIONS_ON_STARTUP = false;
 
     private final Log log = LogFactory.getLog(CassandraTemplate.class);
@@ -80,10 +100,10 @@ public class CassandraTemplate implements CassandraOperations {
     private int replicationFactor = DEFAULT_REPLICATION_FACTOR;
 
     //optional
-    private int maxActive = 20;
-    private int maxIdle = 5; // not used, method to set not found
-    private int thriftSocketTimeout = 3000;
-    private long maxWaitTimeWhenExhausted = 4000;
+    private int maxActive = DEFAULT_MAX_ACTIVE;
+    private int maxIdle = DEFAULT_MAX_IDLE; // not used, method to set not found
+    private int thriftSocketTimeout = DEFAULT_THRIFT_SOCKET_TIMEOUT;
+    private long maxWaitTimeWhenExhausted = DEFAULT_MAX_TIME_WHEN_EXHAUSTED;
 
     private boolean logSessionsOnStartup = DEFAULT_LOG_SESSIONS_ON_STARTUP;
 
@@ -200,9 +220,7 @@ public class CassandraTemplate implements CassandraOperations {
         //
         while (columnSliceIterator.hasNext()) {
             String columnName = columnSliceIterator.next().getName();
-            if (SPECIAL_ATTRIBUTES.contains(columnName)) {
-                //skip this columns, not serialized as objects
-            } else {
+            if (!(SPECIAL_ATTRIBUTES.contains(columnName))) {
                 resultList.add(columnName);
             }
         }

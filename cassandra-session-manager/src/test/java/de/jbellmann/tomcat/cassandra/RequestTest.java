@@ -1,3 +1,18 @@
+/**
+ * Copyright 2012 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package de.jbellmann.tomcat.cassandra;
 
 import java.util.HashSet;
@@ -37,7 +52,7 @@ public class RequestTest {
         Container container = Mockito.mock(Container.class);
         Mockito.when(container.getName()).thenReturn("TEST_CONTAINER");
         context = Mockito.mock(Context.class);
-        CassandraManager manager = new CassandraManager();
+        CassandraManager manager = new MockCassandraManager();
         Mockito.when(context.getManager()).thenReturn(manager);
         Mockito.when(context.getName()).thenReturn("TEST_CONTEXT");
         Mockito.when(context.getParent()).thenReturn(container);
@@ -131,6 +146,10 @@ public class RequestTest {
         @Override
         protected String generateSessionId() {
             return UUID.randomUUID().toString().replace("-", "");
+        }
+
+        @Override
+        public void load() {
         }
 
     }

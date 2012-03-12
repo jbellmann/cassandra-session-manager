@@ -1,3 +1,18 @@
+/**
+ * Copyright 2012 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package de.jbellmann.tomcat.cassandra;
 
 import java.util.Arrays;
@@ -23,6 +38,7 @@ import org.apache.juli.logging.LogFactory;
 public class CassandraSession extends StandardSession {
 
     private static final long serialVersionUID = 1L;
+    private static final long MILLIS = 1000L;
 
     private final Log log = LogFactory.getLog(CassandraSession.class);
 
@@ -88,7 +104,7 @@ public class CassandraSession extends StandardSession {
 
         if (maxInactiveInterval >= 0) {
             long timeNow = System.currentTimeMillis();
-            int timeIdle = (int) ((timeNow - lastAccessedTime) / 1000L);
+            int timeIdle = (int) ((timeNow - lastAccessedTime) / MILLIS);
             if (timeIdle >= maxInactiveInterval) {
                 expire(true);
             }
