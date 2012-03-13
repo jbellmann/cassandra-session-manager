@@ -49,8 +49,6 @@ public interface CassandraOperations {
 
     List<String> findSessionKeys();
 
-    void addSession(String sessionId);
-
     void removeSession(String sessionId);
 
 }

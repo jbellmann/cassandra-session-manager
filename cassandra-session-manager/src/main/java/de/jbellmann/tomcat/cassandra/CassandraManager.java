@@ -118,7 +118,7 @@ public class CassandraManager extends ManagerBase {
     protected void startInternal() throws LifecycleException {
         log.info("Starting Cassandra Session Manager");
         try {
-            this.cassandraTemplate.initialize();
+            this.cassandraTemplate.initialize(getClassLoader());
         } catch (Throwable t) {
             ExceptionUtils.handleThrowable(t);
             log.error(sm.getString("standardManager.managerLoad"), t);
@@ -179,11 +179,6 @@ public class CassandraManager extends ManagerBase {
     @Override
     public void unload() {
         // NO-OP
-    }
-
-    @Override
-    public void add(Session session) {
-        getCassandraOperations().addSession(session.getId());
     }
 
     @Override

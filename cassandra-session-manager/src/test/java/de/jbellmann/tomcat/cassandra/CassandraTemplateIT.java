@@ -48,7 +48,7 @@ public class CassandraTemplateIT {
     @Test
     public void testSetCreationTime() throws InterruptedException {
         CassandraTemplate template = new TestCassandraTemplate();
-        template.initialize();
+        template.initialize(getClass().getClassLoader());
         // testnonex
 
         for (int i = 0; i < 20; i++) {
@@ -91,7 +91,7 @@ public class CassandraTemplateIT {
     public void testSessionNotExists() {
         CassandraTemplate template = new TestCassandraTemplate();
         template.setLogSessionsOnStartup(true);
-        template.initialize();
+        template.initialize(getClass().getClassLoader());
         String testSessionId = UUID.randomUUID().toString().replace("-", "");
         long lasAccessedTime = template.getLastAccessedTime(testSessionId);
         long testcreationTime = template.getCreationTime(testSessionId);
@@ -107,7 +107,7 @@ public class CassandraTemplateIT {
 
         CassandraTemplate template = new TestCassandraTemplate();
         template.setLogSessionsOnStartup(true);
-        template.initialize();
+        template.initialize(getClass().getClassLoader());
 
         CassandraManager manager = new CassandraManager();
         manager.setCassandraTemplate(template);

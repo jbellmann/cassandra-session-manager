@@ -76,7 +76,7 @@ public class RequestTest {
         Mockito.when(servletResponse.isCommitted()).thenReturn(false);
         Mockito.when(response.getResponse()).thenReturn(servletResponse);
         CassandraTemplate template = new MockCassandraTemplate();
-        template.initialize();
+        template.initialize(getClass().getClassLoader());
         manager.setContainer(context);
         manager.setCassandraTemplate(template);
         manager.setMaxInactiveInterval(1000 * 60 * 30);
@@ -118,7 +118,7 @@ public class RequestTest {
     class MockCassandraTemplate extends CassandraTemplate {
 
         @Override
-        public void initialize() {
+        public void initialize(ClassLoader classLoader) {
             // do nothing
         }
 
@@ -127,9 +127,9 @@ public class RequestTest {
             return sessionId.equals(REQUESTED_SESSION_ID) ? -1 : System.currentTimeMillis();
         }
 
-        @Override
-        public void addSession(String sessionId) {
-        }
+        //        @Override
+        //        public void addSession(String sessionId) {
+        //        }
 
         @Override
         public void setCreationTime(String sessionId, long time) {

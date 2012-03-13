@@ -107,8 +107,11 @@ public class CassandraTemplate implements CassandraOperations {
 
     private boolean logSessionsOnStartup = DEFAULT_LOG_SESSIONS_ON_STARTUP;
 
-    public void initialize() {
+    private ObjectSerializer objectSerializer;
+
+    public void initialize(ClassLoader classLoader) {
         log.info("Initialize Cassandra Template ...");
+        objectSerializer = new ObjectSerializer(classLoader);
         cluster = HFactory.getOrCreateCluster(getClusterName(), getCassandraHostConfigurator());
         // ColumnFamilyDefinition
         ColumnFamilyDefinition columnFamilyDefinition = HFactory.createColumnFamilyDefinition(getKeyspaceName(),
@@ -187,7 +190,7 @@ public class CassandraTemplate implements CassandraOperations {
     public Object getAttribute(final String sessionId, final String name) {
         log.info("Get attribute '" + name + "' for Session : " + sessionId);
         ColumnQuery<String, String, Object> query = HFactory.createColumnQuery(keyspace, StringSerializer.get(),
-                StringSerializer.get(), ObjectSerializer.get());
+                StringSerializer.get(), objectSerializer);
         query.setColumnFamily(getColumnFamilyName()).setKey(sessionId).setName(name);
         QueryResult<HColumn<String, Object>> result = query.execute();
         HColumn<String, Object> column = result.get();
@@ -196,10 +199,10 @@ public class CassandraTemplate implements CassandraOperations {
 
     @Override
     public void setAttribute(final String sessionId, final String name, final Object value) {
-        log.info("Set attribute '" + name + "' for Session : " + sessionId);
+        log.info("Set attribute '" + name + "' with value " + value.toString() + " for Session : " + sessionId + "");
         Mutator<String> mutator = HFactory.createMutator(this.keyspace, StringSerializer.get());
         mutator.insert(sessionId, this.columnFamilyName,
-                HFactory.createColumn(name, value, StringSerializer.get(), ObjectSerializer.get()));
+                HFactory.createColumn(name, value, StringSerializer.get(), objectSerializer));
     }
 
     @Override
@@ -232,16 +235,16 @@ public class CassandraTemplate implements CassandraOperations {
         return Collections.enumeration(Arrays.asList(keys(sessionId)));
     }
 
-    @Override
-    public void addSession(final String sessionId) {
-        long now = System.currentTimeMillis();
-        Mutator<String> mutator = HFactory.createMutator(this.keyspace, StringSerializer.get());
-        mutator.addInsertion(sessionId, getColumnFamilyName(),
-                HFactory.createColumn(CREATIONTIME_COLUMN_NAME, now, StringSerializer.get(), LongSerializer.get()));
-        mutator.addInsertion(sessionId, getColumnFamilyName(),
-                HFactory.createColumn(LAST_ACCESSTIME_COLUMN_NAME, now, StringSerializer.get(), LongSerializer.get()));
-        mutator.execute();
-    }
+    //    @Override
+    //    public void addSession(final String sessionId) {
+    //        long now = System.currentTimeMillis();
+    //        Mutator<String> mutator = HFactory.createMutator(this.keyspace, StringSerializer.get());
+    //        mutator.addInsertion(sessionId, getColumnFamilyName(),
+    //                HFactory.createColumn(CREATIONTIME_COLUMN_NAME, now, StringSerializer.get(), LongSerializer.get()));
+    //        mutator.addInsertion(sessionId, getColumnFamilyName(),
+    //                HFactory.createColumn(LAST_ACCESSTIME_COLUMN_NAME, now, StringSerializer.get(), LongSerializer.get()));
+    //        mutator.execute();
+    //    }
 
     @Override
     public List<String> findSessionKeys() {
