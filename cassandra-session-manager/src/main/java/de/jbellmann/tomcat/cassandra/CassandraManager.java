@@ -139,12 +139,6 @@ public class CassandraManager extends ManagerBase {
     @Override
     protected void stopInternal() throws LifecycleException {
         log.info("Stopping Cassandra Session Manager");
-        try {
-            this.cassandraTemplate.shutdown();
-        } catch (Throwable t) {
-            ExceptionUtils.handleThrowable(t);
-            log.error(sm.getString("standardManager.managerUnload"), t);
-        }
         setState(LifecycleState.STOPPING);
 
         // Write out sessions
@@ -170,6 +164,13 @@ public class CassandraManager extends ManagerBase {
                 // object are kept in a shared field somewhere
                 session.recycle();
             }
+        }
+
+        try {
+            this.cassandraTemplate.shutdown();
+        } catch (Throwable t) {
+            ExceptionUtils.handleThrowable(t);
+            log.error(sm.getString("standardManager.managerUnload"), t);
         }
         log.info("Cassandra Session Manager stopped");
         // Require a new random number generator if we are restarted
