@@ -3,5 +3,5 @@
   <Manager className="de.jbellmann.tomcat.cassandra.CassandraManager"
            hosts="localhost:9160"
            maxActiveConnections="5"
-           LogSessionsOnStartup="true"/>
+           logSessionsOnStartup="true"/>
 </Context>
