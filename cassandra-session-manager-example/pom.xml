@@ -65,6 +65,8 @@
         <configuration>
           <downloadTomcatExamples>true</downloadTomcatExamples>
           <tomcatSetAwait>false</tomcatSetAwait>
+	<tomcatHttpPort>9090</tomcatHttpPort>
+	<tomcatShutdownPort>9005</tomcatShutdownPort>
           <libs>
             <jarArtifact>
               <groupId>de.jbellmann.tomcat.cassandra</groupId>

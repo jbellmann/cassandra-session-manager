@@ -16,7 +16,7 @@ public class ControllerIT {
     @Test
     public void testServlet() throws ClientProtocolException, IOException {
         DefaultHttpClient client = new DefaultHttpClient();
-        HttpGet method = new HttpGet("http://localhost:8080/cassandra-example/add/");
+        HttpGet method = new HttpGet("http://localhost:9090/cassandra-example/add/");
         client.execute(method, handler);
         client.execute(method, handler);
         client.execute(method, handler);

@@ -132,8 +132,8 @@ public class CassandraTemplate implements CassandraOperations {
             List<String> sessionIdList = findSessionKeys();
             log.info("Found " + sessionIdList.size() + " Sessions in DB");
             for (final String sessionId : sessionIdList) {
-            	if(log.isDebugEnabled()){
-            		log.debug("SessionId found : " + sessionId);
+            	if(log.isTraceEnabled()){
+            		log.info("SessionId found : " + sessionId);
             	}
             }
         }
@@ -164,9 +164,7 @@ public class CassandraTemplate implements CassandraOperations {
 
     @Override
     public void setCreationTime(final String sessionId, final long time) {
-    	if(log.isDebugEnabled()){
-    		log.debug("Set CREATION_TIME for Session : " + sessionId + " to value " + time);
-    	}
+        log.info("Set CREATION_TIME for Session : " + sessionId + " to value " + time);
         Mutator<String> mutator = HFactory.createMutator(this.keyspace, StringSerializer.get());
         mutator.insert(sessionId, this.columnFamilyName,
                 HFactory.createColumn(CREATIONTIME_COLUMN_NAME, time, StringSerializer.get(), LongSerializer.get()));
@@ -174,9 +172,7 @@ public class CassandraTemplate implements CassandraOperations {
 
     @Override
     public long getLastAccessedTime(final String sessionId) {
-    	if(log.isDebugEnabled()){
-    		log.debug("Get LAST_ACCESSED_TIME for Session : " + sessionId);
-    	}
+		log.info("Get LAST_ACCESSED_TIME for Session : " + sessionId);
         ColumnQuery<String, String, Long> query = HFactory.createColumnQuery(keyspace, StringSerializer.get(),
                 StringSerializer.get(), LongSerializer.get());
         query.setColumnFamily(getColumnFamilyName()).setKey(sessionId).setName(LAST_ACCESSTIME_COLUMN_NAME);
@@ -186,9 +182,7 @@ public class CassandraTemplate implements CassandraOperations {
 
     @Override
     public void setLastAccessedTime(final String sessionId, final long time) {
-    	if(log.isDebugEnabled()){
-    		log.debug("Set LAST_ACCESSED_TIME for Session : " + sessionId + " to value " + time);
-    	}
+        log.info("Set LAST_ACCESSED_TIME for Session : " + sessionId + " to value " + time);
         Mutator<String> mutator = HFactory.createMutator(this.keyspace, StringSerializer.get());
         mutator.insert(sessionId, this.columnFamilyName,
                 HFactory.createColumn(LAST_ACCESSTIME_COLUMN_NAME, time, StringSerializer.get(), LongSerializer.get()));
@@ -196,9 +190,7 @@ public class CassandraTemplate implements CassandraOperations {
 
     @Override
     public Object getAttribute(final String sessionId, final String name) {
-    	if(log.isDebugEnabled()){
-    		log.debug("Get attribute '" + name + "' for Session : " + sessionId);
-    	}
+        log.info("Get attribute '" + name + "' for Session : " + sessionId);
         ColumnQuery<String, String, Object> query = HFactory.createColumnQuery(keyspace, StringSerializer.get(),
                 StringSerializer.get(), objectSerializer);
         query.setColumnFamily(getColumnFamilyName()).setKey(sessionId).setName(name);
@@ -209,9 +201,7 @@ public class CassandraTemplate implements CassandraOperations {
 
     @Override
     public void setAttribute(final String sessionId, final String name, final Object value) {
-    	if(log.isDebugEnabled()){
-    		log.debug("Set attribute '" + name + "' with value " + value.toString() + " for Session : " + sessionId + "");
-    	}
+        log.info("Set attribute '" + name + "' with value " + value.toString() + " for Session : " + sessionId + "");
         Mutator<String> mutator = HFactory.createMutator(this.keyspace, StringSerializer.get());
         mutator.insert(sessionId, this.columnFamilyName,
                 HFactory.createColumn(name, value, StringSerializer.get(), objectSerializer));
@@ -219,9 +209,7 @@ public class CassandraTemplate implements CassandraOperations {
 
     @Override
     public void removeAttribute(final String sessionId, final String name) {
-    	if(log.isDebugEnabled()){
-    		log.info("Remove attribute '" + name + "' for Session : " + sessionId);
-    	}        
+        log.info("Remove attribute '" + name + "' for Session : " + sessionId);        
         Mutator<String> mutator = HFactory.createMutator(this.keyspace, StringSerializer.get());
         mutator.delete(sessionId, this.columnFamilyName, name, StringSerializer.get());
     }
