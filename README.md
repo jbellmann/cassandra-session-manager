@@ -9,15 +9,15 @@ How to build
 This Project uses Maven as Build-System.
 
 With Maven installed you can run
-´´´´
-mvn install
-´´´´
+
+	mvn install
+
 to build the project.
 
 To run the example application too, specify a profile
-´´´´
-mvn install -PwithExample
-´´´´
+
+	mvn install -PwithExample
+
 
 How to configure
 ================
