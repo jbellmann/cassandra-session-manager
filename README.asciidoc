@@ -21,7 +21,6 @@ mvn install -PwithExample
 
 In your Webapplication create an folder _META-INF_ where you put a file _context.xml_ with a _Manager_-declaration
 
-[code,xml]
 ----
 <?xml version="1.0" encoding="UTF-8"?>
 <Context>
