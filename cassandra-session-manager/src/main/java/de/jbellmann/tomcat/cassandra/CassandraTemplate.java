@@ -237,17 +237,6 @@ public class CassandraTemplate implements CassandraOperations {
         return Collections.enumeration(Arrays.asList(keys(sessionId)));
     }
 
-    //    @Override
-    //    public void addSession(final String sessionId) {
-    //        long now = System.currentTimeMillis();
-    //        Mutator<String> mutator = HFactory.createMutator(this.keyspace, StringSerializer.get());
-    //        mutator.addInsertion(sessionId, getColumnFamilyName(),
-    //                HFactory.createColumn(CREATIONTIME_COLUMN_NAME, now, StringSerializer.get(), LongSerializer.get()));
-    //        mutator.addInsertion(sessionId, getColumnFamilyName(),
-    //                HFactory.createColumn(LAST_ACCESSTIME_COLUMN_NAME, now, StringSerializer.get(), LongSerializer.get()));
-    //        mutator.execute();
-    //    }
-
     @Override
     public List<String> findSessionKeys() {
         List<String> resultList = new ArrayList<String>();
