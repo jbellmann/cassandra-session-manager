@@ -20,8 +20,9 @@ mvn install -PwithExample
 == How to configure ==
 
 In your Webapplication create an folder _META-INF_ where you put a file _context.xml_ with a _Manager_-declaration
-[subs="pass"]
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+[code,xml]
+----
 <?xml version="1.0" encoding="UTF-8"?>
 <Context>
   <Manager className="de.jbellmann.tomcat.cassandra.CassandraManager"
@@ -29,4 +30,4 @@ In your Webapplication create an folder _META-INF_ where you put a file _context
            maxActiveConnections="5"
            logSessionsOnStartup="true"/>
 </Context>
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+----
