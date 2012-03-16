@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.catalina.Container;
@@ -33,6 +34,9 @@ import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.apache.tomcat.util.ExceptionUtils;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+
 /**
  * 
  * @author Joerg Bellmann
@@ -41,6 +45,9 @@ import org.apache.tomcat.util.ExceptionUtils;
 public class CassandraManager extends ManagerBase {
 
     private static final String INFO = CassandraManager.class.getName() + "/1.0";
+    
+    public static final long DEFAULT_MAXIMUM_CACHE_SIZE = 1000;
+    public static final long DEFAULT_EXPIRE_AFTER_ACCESS = (10 * 60); // TEN MINUTES
 
     private final Log log = LogFactory.getLog(CassandraManager.class);
 
@@ -48,6 +55,11 @@ public class CassandraManager extends ManagerBase {
     protected AtomicInteger rejected = new AtomicInteger(0);
 
     protected CassandraTemplate cassandraTemplate = new CassandraTemplate();
+    
+    protected long maximumCacheSize = DEFAULT_MAXIMUM_CACHE_SIZE;
+    protected long expireAfterAccess = DEFAULT_EXPIRE_AFTER_ACCESS;
+    
+    protected Cache<String, Session> sessionsCache;
 
     void setName(String name) {
         this.name = name;
@@ -101,24 +113,17 @@ public class CassandraManager extends ManagerBase {
      */
     @Override
     public void load() {
-        List<String> sessionIds = getCassandraOperations().findSessionKeys();
-        for (String sessionId : sessionIds) {
-            try {
-                if (log.isDebugEnabled()) {
-                    log.debug("Loading session : " + sessionId);
-                }
-                findSession(sessionId);
-            } catch (IOException e) {
-                log.error("IOException on CassandraManager.load() with sessionId: " + sessionId, e);
-            }
-        }
     }
 
     @Override
     protected void startInternal() throws LifecycleException {
         log.info("Starting Cassandra Session Manager");
         try {
-            this.cassandraTemplate.initialize(getClassLoader());
+        	createCache();
+        	
+        	initializeTemplate();
+            
+            
         } catch (Throwable t) {
             ExceptionUtils.handleThrowable(t);
             log.error(sm.getString("standardManager.managerLoad"), t);
@@ -136,6 +141,19 @@ public class CassandraManager extends ManagerBase {
         log.info("Cassandra Session Manager started");
     }
 
+    protected void createCache(){
+    	// build sessionCache
+    	sessionsCache = CacheBuilder.newBuilder()
+    			.maximumSize(getMaximumCacheSize())
+    			.expireAfterAccess(10 * 60, TimeUnit.SECONDS)
+    			.build();
+    }
+    
+    protected void initializeTemplate(){
+    	// initialize template
+        this.cassandraTemplate.initialize(getClassLoader());
+    }
+    
     @Override
     protected void stopInternal() throws LifecycleException {
         log.info("Stopping Cassandra Session Manager");
@@ -149,24 +167,29 @@ public class CassandraManager extends ManagerBase {
             log.error(sm.getString("standardManager.managerUnload"), t);
         }
 
-        // Expire all active sessions
-        Session[] sessions = findSessions();
-        for (int i = 0; i < sessions.length; i++) {
-            Session session = sessions[i];
-            try {
-                if (session.isValid()) {
-                    session.expire();
-                }
-            } catch (Throwable t) {
-                ExceptionUtils.handleThrowable(t);
-            } finally {
-                // Measure against memory leaking if references to the session
-                // object are kept in a shared field somewhere
-                session.recycle();
-            }
-        }
+//        // Expire all active sessions
+//        Session[] sessions = findSessions();
+//        for (int i = 0; i < sessions.length; i++) {
+//            Session session = sessions[i];
+//            try {
+//                if (session.isValid()) {
+//                    session.expire();
+//                }
+//            } catch (Throwable t) {
+//                ExceptionUtils.handleThrowable(t);
+//            } finally {
+//                // Measure against memory leaking if references to the session
+//                // object are kept in a shared field somewhere
+//                session.recycle();
+//            }
+//        }
 
         try {
+        	// clear cache
+        	sessionsCache.invalidateAll();
+        	sessionsCache.cleanUp();
+        	
+        	// shutdown connections
             this.cassandraTemplate.shutdown();
         } catch (Throwable t) {
             ExceptionUtils.handleThrowable(t);
@@ -184,11 +207,14 @@ public class CassandraManager extends ManagerBase {
 
     @Override
     public Session findSession(String id) throws IOException {
-        Session sess = super.findSession(id);
+//        Session sess = super.findSession(id);
+        
+        Session sess = sessionsCache.getIfPresent(id);
         if (null != sess) {
             if (log.isDebugEnabled()) {
                 log.debug("Returning cached session: " + sess);
             }
+            log.info("Returning cached session: " + sess);
             return sess;
         }
         long lastAccessedTime = getCassandraOperations().getLastAccessedTime(id);
@@ -197,14 +223,14 @@ public class CassandraManager extends ManagerBase {
             return null;
         } else {
             sess = createSession(id);
-            sessions.put(sess.getId(), sess);
+//            sessions.put(sess.getId(), sess);
         }
         return sess;
     }
 
     protected Session findSessionInternal(String id) {
         try {
-            return super.findSession(id);
+            return findSession(id);
         } catch (IOException e) {
             log.error("IOException on Cassandra.findSessionInternal() with sessionId " + id, e);
         }
@@ -297,14 +323,15 @@ public class CassandraManager extends ManagerBase {
         session.setNew(true);
         session.setValid(true);
         session.setMaxInactiveInterval(maxInactiveInterval);
-        String id = sessionId;
-        if (id == null) {
-            id = generateSessionId();
+        if(sessionId == null){
+        	session.setIdInternal(super.generateSessionId());
+            session.setCreationTime(System.currentTimeMillis());
+            session.setLastAccessedTime(System.currentTimeMillis());
+            sessionCounter++;
+        }else{
+        	session.setIdInternal(sessionId);
         }
-        session.setId(id, true);
-        session.setCreationTime(System.currentTimeMillis());
-        session.setLastAccessedTime(System.currentTimeMillis());
-        sessionCounter++;
+        sessionsCache.put(session.getId(), session);
         //
         return session;
     }
@@ -397,6 +424,22 @@ public class CassandraManager extends ManagerBase {
 
     public void setLogSessionsOnStartup(boolean logSessionsOnStartup) {
         this.cassandraTemplate.setLogSessionsOnStartup(logSessionsOnStartup);
+    }
+    
+    public long getMaximumCacheSize(){
+    	return this.maximumCacheSize;
+    }
+    
+    public void setMaximumCacheSize(long maximumCacheSize){
+    	this.maximumCacheSize = maximumCacheSize;
+    }
+    
+    public long getExpireAfterAccess(){
+    	return this.expireAfterAccess;
+    }
+    
+    public void setExpireAfterAccess(long expireAfterAccess){
+    	this.expireAfterAccess = expireAfterAccess;
     }
 
 }
