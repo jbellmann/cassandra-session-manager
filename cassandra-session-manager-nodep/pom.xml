@@ -51,6 +51,7 @@
                     <artifact>commons-lang:commons-lang</artifact>
                     <includes>
                         <include>org/apache/commons/lang/StringUtils.class</include>
+                        <include>org/apache/commons/lang/math/NumberUtils.class</include>
                     </includes>
                 </filter>
                 <filter>
