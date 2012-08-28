@@ -17,6 +17,7 @@ public class CalculationServlet extends HttpServlet {
 
     @Override
     protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        System.out.println("Calculation-Servlet invoked on port: " + req.getServerPort());
         HttpSession session = req.getSession();
         Result result = (Result) session.getAttribute(RESULT_ATTRIBUTE);
         if (result == null) {
