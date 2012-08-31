@@ -6,8 +6,8 @@
     <version>1.0.0-SNAPSHOT</version>
     <relativePath>..</relativePath>
   </parent>
-  <artifactId>cassandra-session-manager-astyanax</artifactId>
-  <name>Cassandra Tomcat Session Manager -- Astyanax</name>
+  <artifactId>cassandra-session-manager-hector</artifactId>
+  <name>Cassandra Tomcat Session Manager -- Hector</name>
   
   <build>
     <plugins>
@@ -112,17 +112,46 @@
   </build>
 
   <dependencies>
+  	<dependency>
+  		<groupId>${project.groupId}</groupId>
+  		<artifactId>cassandra-session-manager</artifactId>
+  		<version>${project.version}</version>
+  	</dependency>
+    <!-- TOMCAT -->
     <dependency>
-    	<groupId>${project.groupId}</groupId>
-    	<artifactId>cassandra-session-manager</artifactId>
-    	<version>${project.version}</version>
+      <groupId>org.apache.tomcat</groupId>
+      <artifactId>tomcat-catalina</artifactId>
     </dependency>
-	<dependency>
-	    <groupId>com.netflix.astyanax</groupId>
-	    <artifactId>astyanax</artifactId>
-	    <!-- does not run with 1.0.4, 1.0.5, 1.0.6 -->
-	    <version>1.0.3</version>
-	</dependency>
+    <dependency>
+      <groupId>org.apache.tomcat</groupId>
+      <artifactId>tomcat-coyote</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>commons-lang</groupId>
+        <artifactId>commons-lang</artifactId>
+    </dependency>
+    <dependency>
+    <groupId>me.prettyprint</groupId>
+    <artifactId>hector-core</artifactId>
+    <exclusions>
+        <exclusion>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+        </exclusion>
+    </exclusions>
+</dependency>
+<dependency>
+    <groupId>com.google.guava</groupId>
+    <artifactId>guava</artifactId>
+</dependency>
+<dependency>
+    <groupId>org.slf4j</groupId>
+    <artifactId>slf4j-api</artifactId>
+</dependency>
+<dependency>
+    <groupId>org.slf4j</groupId>
+    <artifactId>slf4j-log4j12</artifactId>
+</dependency>
     <dependency>
         <groupId>junit</groupId>
         <artifactId>junit</artifactId>

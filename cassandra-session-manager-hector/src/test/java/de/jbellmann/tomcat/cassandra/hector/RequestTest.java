@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.jbellmann.tomcat.cassandra;
+package de.jbellmann.tomcat.cassandra.hector;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -34,6 +34,9 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
+
+import de.jbellmann.tomcat.cassandra.CassandraManager;
+import de.jbellmann.tomcat.cassandra.CassandraTemplate;
 
 /**
  * 
@@ -115,7 +118,7 @@ public class RequestTest {
         return trackingModes;
     }
 
-    class MockCassandraTemplate extends CassandraTemplate {
+    class MockCassandraTemplate extends HectorCassandraTemplate {
 
         @Override
         public void initialize(ClassLoader classLoader) {
@@ -150,6 +153,11 @@ public class RequestTest {
 
         @Override
         public void load() {
+        }
+
+        @Override
+        public CassandraTemplate createCassandraTemplate() {
+            return new MockCassandraTemplate();
         }
 
     }

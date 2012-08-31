@@ -74,6 +74,7 @@
                     </execution>
                 </executions>
             </plugin>
+            <!-- 
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-failsafe-plugin</artifactId>
@@ -108,7 +109,7 @@
             <phase>post-integration-test</phase>
           </execution>
         </executions>
-      </plugin>
+      </plugin> -->
     </plugins>
   </build>
 
@@ -126,28 +127,6 @@
         <groupId>commons-lang</groupId>
         <artifactId>commons-lang</artifactId>
     </dependency>
-    <dependency>
-    <groupId>me.prettyprint</groupId>
-    <artifactId>hector-core</artifactId>
-    <exclusions>
-        <exclusion>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-        </exclusion>
-    </exclusions>
-</dependency>
-<dependency>
-    <groupId>com.google.guava</groupId>
-    <artifactId>guava</artifactId>
-</dependency>
-<dependency>
-    <groupId>org.slf4j</groupId>
-    <artifactId>slf4j-api</artifactId>
-</dependency>
-<dependency>
-    <groupId>org.slf4j</groupId>
-    <artifactId>slf4j-log4j12</artifactId>
-</dependency>
     <dependency>
         <groupId>junit</groupId>
         <artifactId>junit</artifactId>

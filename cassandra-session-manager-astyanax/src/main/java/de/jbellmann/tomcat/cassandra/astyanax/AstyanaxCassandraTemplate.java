@@ -1,4 +1,4 @@
-package de.jbellmann.tomcat.cassandra;
+package de.jbellmann.tomcat.cassandra.astyanax;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,6 +31,8 @@ import com.netflix.astyanax.serializers.ObjectSerializer;
 import com.netflix.astyanax.serializers.StringSerializer;
 import com.netflix.astyanax.thrift.ThriftFamilyFactory;
 import com.netflix.astyanax.util.RangeBuilder;
+
+import de.jbellmann.tomcat.cassandra.CassandraTemplate;
 
 /**
  * 

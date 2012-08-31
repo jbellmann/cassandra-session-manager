@@ -6,9 +6,9 @@
     <version>1.0.0-SNAPSHOT</version>
   </parent>
   <groupId>de.jbellmann.tomcat.cassandra</groupId>
-  <artifactId>cassandra-session-manager-nodep</artifactId>
+  <artifactId>cassandra-session-manager-astyanax-nodep</artifactId>
   <version>1.0.0-SNAPSHOT</version>
-  <name>Cassandra Tomcat Session Manager -- NoDep</name>
+  <name>Cassandra Tomcat Session Manager -- Astyanax -- NoDep</name>
 
   <build>
     <plugins>
@@ -75,6 +75,11 @@
         <groupId>${project.groupId}</groupId>
         <artifactId>cassandra-session-manager</artifactId>
         <version>${project.version}</version>
+    </dependency>
+    <dependency>
+    	<groupId>${project.groupId}</groupId>
+    	<artifactId>cassandra-session-manager-astyanax</artifactId>
+    	<version>${project.version}</version>
     </dependency>
   </dependencies>
 </project>

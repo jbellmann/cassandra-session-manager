@@ -20,8 +20,10 @@
     
     <modules>
         <module>cassandra-session-manager</module>
-        <module>cassandra-session-manager-nodep</module>
         <module>cassandra-session-manager-astyanax</module>
+        <module>cassandra-session-manager-hector</module>
+        <module>cassandra-session-manager-hector-nodep</module>
+        <module>cassandra-session-manager-astyanax-nodep</module>
     </modules>
 
   <dependencyManagement>

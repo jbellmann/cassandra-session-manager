@@ -38,36 +38,26 @@ import org.apache.tomcat.util.ExceptionUtils;
  * @author Joerg Bellmann
  *
  */
-public class CassandraManager extends ManagerBase {
-
-    private static final String INFO = CassandraManager.class.getName() + "/1.0";
+public abstract class CassandraManager extends ManagerBase {
 
     private final Log log = LogFactory.getLog(CassandraManager.class);
 
     protected String name = "cassandra-manager";
     protected AtomicInteger rejected = new AtomicInteger(0);
 
-    protected CassandraTemplate cassandraTemplate = new CassandraTemplate();
+    protected CassandraTemplate cassandraTemplate = createCassandraTemplate();
+    
+    public abstract CassandraTemplate createCassandraTemplate();
 
     void setName(String name) {
         this.name = name;
-    }
-
-    @Override
-    public String getName() {
-        return this.name;
-    }
-
-    @Override
-    public String getInfo() {
-        return INFO;
     }
 
     protected CassandraOperations getCassandraOperations() {
         return this.cassandraTemplate;
     }
 
-    protected void setCassandraTemplate(CassandraTemplate cassandraTemplate) {
+    public void setCassandraTemplate(CassandraTemplate cassandraTemplate) {
         this.cassandraTemplate = cassandraTemplate;
     }
 

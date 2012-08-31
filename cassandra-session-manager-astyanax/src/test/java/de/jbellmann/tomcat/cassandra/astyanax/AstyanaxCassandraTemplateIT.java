@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.jbellmann.tomcat.cassandra;
+package de.jbellmann.tomcat.cassandra.astyanax;
 
 import java.util.Arrays;
 import java.util.List;
@@ -30,12 +30,16 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import de.jbellmann.tomcat.cassandra.CassandraManager;
+import de.jbellmann.tomcat.cassandra.CassandraTemplate;
+import de.jbellmann.tomcat.cassandra.astyanax.AstyanaxCassandraTemplate;
+
 /**
  * 
  * @author Joerg Bellmann
  *
  */
-public class CassandraTemplateIT {
+public class AstyanaxCassandraTemplateIT {
 
     @Before
     public void setUp() throws TTransportException {
@@ -47,7 +51,7 @@ public class CassandraTemplateIT {
 
     @Test
     public void testSetCreationTime() throws InterruptedException {
-        CassandraTemplate template = new TestCassandraTemplate();
+        CassandraTemplate template = new AstyanaxCassandraTemplate();
         template.initialize(getClass().getClassLoader());
         // testnonex
 
@@ -89,7 +93,7 @@ public class CassandraTemplateIT {
 
     @Test
     public void testSessionNotExists() {
-        CassandraTemplate template = new TestCassandraTemplate();
+        CassandraTemplate template = new AstyanaxCassandraTemplate();
         template.setLogSessionsOnStartup(true);
         template.initialize(getClass().getClassLoader());
         String testSessionId = UUID.randomUUID().toString().replace("-", "");
@@ -105,11 +109,11 @@ public class CassandraTemplateIT {
 
         Context context = Mockito.mock(Context.class);
 
-        CassandraTemplate template = new TestCassandraTemplate();
+        CassandraTemplate template = new AstyanaxCassandraTemplate();
         template.setLogSessionsOnStartup(true);
         template.initialize(getClass().getClassLoader());
 
-        CassandraManager manager = new CassandraManager();
+        CassandraManager manager = new AstyanaxCassandraManager();
         manager.setCassandraTemplate(template);
         Mockito.when(context.getManager()).thenReturn(manager);
         Request request = new Request();
@@ -124,14 +128,14 @@ public class CassandraTemplateIT {
         return UUID.randomUUID().toString().replaceAll("-", "");
     }
 
-    class TestCassandraTemplate extends CassandraTemplate {
-
-        public TestCassandraTemplate() {
-            super();
-            super.setHosts("localhost:9160");
-            super.setMaxActive(5);
-        }
-
-    }
+//    class TestCassandraTemplate extends AstyanaxCassandraTemplate {
+//
+//        public TestCassandraTemplate() {
+//            super();
+////            super.setHosts("localhost:9160");
+////            super.setMaxActive(5);
+//        }
+//
+//    }
 
 }
