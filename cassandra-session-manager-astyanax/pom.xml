@@ -7,6 +7,7 @@
     <relativePath>..</relativePath>
   </parent>
   <artifactId>cassandra-session-manager-astyanax</artifactId>
+  <name>Cassandra Tomcat Session Manager -- Astyanax</name>
   
   <build>
     <plugins>
@@ -111,14 +112,11 @@
   </build>
 
   <dependencies>
-    <!-- TOMCAT -->
+      <!-- TOMCAT -->
     <dependency>
       <groupId>org.apache.tomcat</groupId>
       <artifactId>tomcat-catalina</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.tomcat</groupId>
-      <artifactId>tomcat-coyote</artifactId>
+      <scope>provided</scope>
     </dependency>
     <dependency>
     	<groupId>${project.groupId}</groupId>
@@ -131,22 +129,6 @@
 	    <!-- does not run with 1.0.4, 1.0.5, 1.0.6 -->
 	    <version>1.0.3</version>
 	</dependency>
-    <dependency>
-        <groupId>commons-lang</groupId>
-        <artifactId>commons-lang</artifactId>
-    </dependency>
-<dependency>
-    <groupId>com.google.guava</groupId>
-    <artifactId>guava</artifactId>
-</dependency>
-<dependency>
-    <groupId>org.slf4j</groupId>
-    <artifactId>slf4j-api</artifactId>
-</dependency>
-<dependency>
-    <groupId>org.slf4j</groupId>
-    <artifactId>slf4j-log4j12</artifactId>
-</dependency>
     <dependency>
         <groupId>junit</groupId>
         <artifactId>junit</artifactId>

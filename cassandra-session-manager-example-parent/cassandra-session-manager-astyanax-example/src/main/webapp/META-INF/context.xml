@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Context>
+  <Manager className="de.jbellmann.tomcat.cassandra.astyanax.AstyanaxCassandraManager"
+           hosts="localhost:9160"
+           maxActiveConnections="5"
+           logSessionsOnStartup="true"/>
+</Context>

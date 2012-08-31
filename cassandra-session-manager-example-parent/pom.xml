@@ -1,0 +1,18 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <artifactId>cassandra-session-manager-parent</artifactId>
+    <groupId>de.jbellmann.tomcat.cassandra</groupId>
+    <version>1.0.0-SNAPSHOT</version>
+    <relativePath>..</relativePath>
+  </parent>
+  <artifactId>cassandra-session-manager-example-parent</artifactId>
+  <packaging>pom</packaging>
+  
+  <modules>
+  	<module>cassandra-session-manager-example</module>
+  	<module>cassandra-session-manager-hector-example</module>
+  	<module>cassandra-session-manager-hector-example-run</module>
+  	<module>cassandra-session-manager-astyanax-example</module>
+  </modules>
+</project>
