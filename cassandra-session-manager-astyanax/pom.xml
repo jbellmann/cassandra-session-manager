@@ -112,12 +112,6 @@
   </build>
 
   <dependencies>
-      <!-- TOMCAT -->
-    <dependency>
-      <groupId>org.apache.tomcat</groupId>
-      <artifactId>tomcat-catalina</artifactId>
-      <scope>provided</scope>
-    </dependency>
     <dependency>
     	<groupId>${project.groupId}</groupId>
     	<artifactId>cassandra-session-manager</artifactId>
