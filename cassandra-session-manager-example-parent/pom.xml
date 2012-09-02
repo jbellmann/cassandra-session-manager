@@ -14,5 +14,6 @@
   	<module>cassandra-session-manager-hector-example</module>
   	<module>cassandra-session-manager-hector-example-run</module>
   	<module>cassandra-session-manager-astyanax-example</module>
+  	<module>cassandra-session-manager-astyanax-example-run</module>
   </modules>
 </project>

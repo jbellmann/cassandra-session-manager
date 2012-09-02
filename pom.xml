@@ -24,7 +24,6 @@
         <module>cassandra-session-manager-hector</module>
         <module>cassandra-session-manager-hector-nodep</module>
         <module>cassandra-session-manager-astyanax-nodep</module>
-        <!-- <module>cassandra-session-manager-example-parent</module>-->
     </modules>
 
   <dependencyManagement>
@@ -103,7 +102,7 @@
     <profile>
         <id>withExample</id>
         <modules>
-            <module>cassandra-session-manager-example</module>
+            <module>cassandra-session-manager-example-parent</module>
         </modules>
     </profile>
     <profile>
